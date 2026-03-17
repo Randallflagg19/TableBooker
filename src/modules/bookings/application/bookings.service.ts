@@ -1,17 +1,12 @@
-// bookings.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { DbService } from '../../infrastructure/db/db.service';
-import { CreateBookingDto } from './dto/create-booking.dto';
-
-type RestaurantTableRow = {
-  id: string;
-  restaurant_id: string;
-  code: string;
-  capacity: number;
-  kind: 'REGULAR' | 'SHARED';
-  created_at: string;
-  updated_at: string;
-};
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DbService } from '../../../infrastructure/db/db.service';
+import { CreateBookingDto } from '../dto/create-booking.dto';
+import { Booking } from '../infrastructure/booking.type';
+import { RestaurantTable } from '../infrastructure/restaurant-table.type';
 
 @Injectable()
 export class BookingsService {
@@ -19,7 +14,7 @@ export class BookingsService {
 
   public async create(dto: CreateBookingDto) {
     // Проверяем стол
-    const [table] = await this.db.client<RestaurantTableRow[]>`
+    const [table] = await this.db.client<RestaurantTable[]>`
       SELECT * FROM restaurant_tables WHERE id = ${dto.tableId}
     `;
 
@@ -37,6 +32,19 @@ export class BookingsService {
       VALUES (${dto.tableId}, ${dto.userId}, ${dto.guests}, ${dto.startAt}, ${dto.endAt})
       RETURNING *
     `;
+
+    return booking;
+  }
+
+  public async findById(id: string) {
+    const [booking] = await this.db.client<Booking[]>`
+      SELECT * FROM bookings
+      WHERE id = ${id}
+    `;
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
 
     return booking;
   }
