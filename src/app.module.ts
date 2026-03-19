@@ -7,7 +7,11 @@ import { TablesModule } from './modules/tables/tables.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath:
+        process.env.NODE_ENV === 'test' ? ['.env.test', '.env'] : '.env',
+    }),
     ScheduleModule.forRoot(),
     RestaurantsModule,
     BookingsModule,
