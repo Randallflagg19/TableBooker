@@ -67,18 +67,18 @@ Prisma удобна и понятна, но в этом проекте цель 
 ## MVP roadmap
 
 ### Stage 1 — Core backend
-- [ ] создать NestJS-проект
-- [ ] поднять PostgreSQL в Docker
-- [ ] описать SQL-схему
-- [ ] создать модули `restaurants`, `tables`, `bookings`
-- [ ] реализовать базовый `GET /restaurants`
-- [ ] реализовать `POST /bookings/hold`
+- [x] создать NestJS-проект
+- [x] поднять PostgreSQL в Docker
+- [x] описать SQL-схему
+- [x] создать модули `restaurants`, `tables`, `bookings`
+- [x] реализовать базовый `GET /restaurants`
+- [x] реализовать `POST /bookings/hold`
 
 ### Stage 2 — Booking logic
-- [ ] проверка конфликтов по времени
-- [ ] подтверждение и отмена брони
-- [ ] список «мои брони»
-- [ ] автоматическое истечение HOLD
+- [x] проверка конфликтов по времени
+- [x] подтверждение и отмена брони
+- [x] список «мои брони»
+- [x] автоматическое истечение HOLD
 
 ### Stage 3 — Infrastructure
 - [ ] Redis cache для availability
@@ -113,6 +113,6 @@ npm install
 npm run start:dev
 ```
 
-## Ближайшая цель
+## Текущий статус
 
-Сделать первую рабочую версию backend-каркаса и SQL-схемы без перегруза архитектурой.
+Первая версия backend MVP завершена: есть базовое API бронирования, проверка конфликтов, смена статусов и автоистечение HOLD-броней.
