@@ -55,6 +55,7 @@ CREATE TABLE users (
   email TEXT UNIQUE,
   phone TEXT,
   password_hash TEXT,
+  refresh_token_hash TEXT,
   role user_role NOT NULL DEFAULT 'GUEST',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
