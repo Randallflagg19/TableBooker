@@ -28,6 +28,13 @@ export class AuthController {
     return this.authService.refresh(dto);
   }
 
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  public async logout(@CurrentUser() user: CurrentUserData) {
+    return this.authService.logout(user.id);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

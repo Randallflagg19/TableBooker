@@ -2,13 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, IsInt, IsUUID, Min } from 'class-validator';
 
 export class CreateBookingDto {
-  @ApiProperty({ example: '07ebdb21-248a-4519-9511-25f0aa16081c' })
+  @ApiProperty({ example: 'd5870e60-60e2-4b60-94bf-c5c39085939e' })
   @IsUUID()
   tableId: string;
-
-  @ApiProperty({ example: '0fe60283-cac0-4d7b-90bf-d65c6da44c42' })
-  @IsUUID()
-  userId: string;
 
   @ApiProperty({ example: 2 })
   @IsInt()

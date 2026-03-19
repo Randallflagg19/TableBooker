@@ -6,10 +6,14 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { BookingsService } from '../application/bookings.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import type { CurrentUserData } from '../../auth/infrastructure/jwt-payload.type';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -17,8 +21,13 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Post()
-  public async create(@Body() dto: CreateBookingDto) {
-    return this.bookingsService.create(dto);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  public async create(
+    @Body() dto: CreateBookingDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.bookingsService.create(dto, user.id);
   }
 
   @Get(':id')

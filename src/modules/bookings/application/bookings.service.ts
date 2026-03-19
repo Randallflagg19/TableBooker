@@ -12,7 +12,7 @@ import { RestaurantTable } from '../infrastructure/restaurant-table.type';
 export class BookingsService {
   constructor(private readonly db: DbService) {}
 
-  public async create(dto: CreateBookingDto) {
+  public async create(dto: CreateBookingDto, userId: string) {
     const [table] = await this.db.client<RestaurantTable[]>`
       SELECT * FROM restaurant_tables WHERE id = ${dto.tableId}
     `;
@@ -65,7 +65,7 @@ export class BookingsService {
       INSERT INTO bookings (table_id, user_id, guests, start_at, end_at)
       VALUES (
         ${dto.tableId}, 
-        ${dto.userId}, 
+        ${userId}, 
         ${dto.guests}, 
         ${dto.startAt}, 
         ${dto.endAt})

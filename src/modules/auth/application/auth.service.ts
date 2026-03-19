@@ -1,7 +1,6 @@
 import {
   ConflictException,
   Injectable,
-  NotImplementedException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DbService } from '../../../infrastructure/db/db.service';
@@ -12,6 +11,7 @@ import { PublicUser, User } from '../infrastructure/user.type';
 import argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtPayload } from '../infrastructure/jwt-payload.type';
 
 export type AuthTokens = {
   accessToken: string;
@@ -121,7 +121,72 @@ export class AuthService {
     };
   }
 
-  public async refresh(_dto: RefreshTokenDto) {
-    throw new NotImplementedException('Refresh is not implemented yet');
+  public async refresh(dto: RefreshTokenDto): Promise<{ accessToken: string }> {
+    const refreshSecret =
+      this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
+
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(
+        dto.refreshToken,
+        {
+          secret: refreshSecret,
+        },
+      );
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const [user] = await this.db.client<User[]>`
+      SELECT *
+      FROM users
+      WHERE id = ${payload.sub}
+    `;
+
+    if (!user || !user.refresh_token_hash) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isRefreshTokenValid = await argon2.verify(
+      user.refresh_token_hash,
+      dto.refreshToken,
+    );
+
+    if (!isRefreshTokenValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const accessSecret =
+      this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
+
+    const newAccessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      {
+        secret: accessSecret,
+        expiresIn: 15 * 60,
+      },
+    );
+
+    return {
+      accessToken: newAccessToken,
+    };
+  }
+
+  public async logout(userId: string): Promise<{ message: string }> {
+    await this.db.client`
+      UPDATE users
+      SET refresh_token_hash = NULL,
+          updated_at = now()
+      WHERE id = ${userId}
+    `;
+
+    return {
+      message: 'Logged out successfully',
+    };
   }
 }
