@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RestaurantsModule } from './modules/restaurants/restaurants.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { TablesModule } from './modules/tables/tables.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TablesModule } from './modules/tables/tables.module';
         process.env.NODE_ENV === 'test' ? ['.env.test', '.env'] : '.env',
     }),
     ScheduleModule.forRoot(),
+    AuthModule,
     RestaurantsModule,
     BookingsModule,
     TablesModule,

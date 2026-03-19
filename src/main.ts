@@ -19,6 +19,7 @@ async function bootstrap() {
     .setTitle('TableBooker API')
     .setDescription('API for restaurant table booking')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
