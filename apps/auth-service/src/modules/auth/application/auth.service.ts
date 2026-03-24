@@ -12,6 +12,7 @@ import argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../infrastructure/jwt-payload.type';
+import { ValidateAccessTokenResponse } from '../infrastructure/auth-grpc.type';
 
 export type AuthTokens = {
   accessToken: string;
@@ -29,6 +30,35 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  public async validateAccessToken(
+    accessToken: string,
+  ): Promise<ValidateAccessTokenResponse> {
+    const accessSecret =
+      this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
+
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
+        accessToken,
+        {
+          secret: accessSecret,
+        },
+      );
+      return {
+        isValid: true,
+        userId: payload.sub,
+        email: payload.email ?? '',
+        role: payload.role,
+      };
+    } catch {
+      return {
+        isValid: false,
+        userId: '',
+        email: '',
+        role: '',
+      };
+    }
+  }
 
   public async register(dto: RegisterDto): Promise<PublicUser> {
     const [existingUser] = await this.db.client<User[]>`

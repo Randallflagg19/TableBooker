@@ -6,28 +6,46 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  UseGuards,
+  UnauthorizedException,
+  Req,
 } from '@nestjs/common';
 import { BookingsService } from '../application/bookings.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../security/guards/jwt-auth.guard';
-import { CurrentUser } from '../security/decorators/current-user.decorator';
-import type { CurrentUserData } from '../security/infrastructure/jwt-payload.type';
+import { AuthClientService } from '../../../infrastructure/auth-client/auth-client.service';
+import type { Request } from 'express';
 
 @ApiTags('Bookings')
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly authClientService: AuthClientService,
+  ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  public async create(
-    @Body() dto: CreateBookingDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    return this.bookingsService.create(dto, user.id);
+  public async create(@Body() dto: CreateBookingDto, @Req() request: Request) {
+    const authorization = request.headers.authorization;
+
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header is missing');
+    }
+
+    const [scheme, accessToken] = authorization.split(' ');
+
+    if (scheme !== 'Bearer' || !accessToken) {
+      throw new UnauthorizedException('Invalid authorization header format');
+    }
+
+    const authResult =
+      await this.authClientService.validateAccessToken(accessToken);
+
+    if (!authResult.isValid) {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
+    return this.bookingsService.create(dto, authResult.userId);
   }
 
   @Get(':id')

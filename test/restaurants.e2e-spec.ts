@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request, { Response } from 'supertest';
-import { AppModule } from './../src/app.module';
+import { AppModule } from '../apps/booking-service/src/app.module';
 
 type RestaurantDto = {
   id: string;
@@ -23,6 +23,7 @@ type RestaurantTableDto = {
 
 describe('Restaurants (e2e)', () => {
   let app: INestApplication;
+  let httpApp: Parameters<typeof request>[0];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -40,6 +41,9 @@ describe('Restaurants (e2e)', () => {
     );
 
     await app.init();
+    httpApp = app.getHttpAdapter().getInstance() as Parameters<
+      typeof request
+    >[0];
   });
 
   afterAll(async () => {
@@ -47,7 +51,7 @@ describe('Restaurants (e2e)', () => {
   });
 
   it('GET /restaurants returns a list of restaurants', async () => {
-    const response: Response = await request(app.getHttpServer())
+    const response: Response = await request(httpApp)
       .get('/restaurants')
       .expect(200);
 
@@ -63,7 +67,7 @@ describe('Restaurants (e2e)', () => {
   });
 
   it('GET /restaurants/:id returns one restaurant', async () => {
-    const restaurantsResponse: Response = await request(app.getHttpServer())
+    const restaurantsResponse: Response = await request(httpApp)
       .get('/restaurants')
       .expect(200);
 
@@ -73,7 +77,7 @@ describe('Restaurants (e2e)', () => {
 
     const firstRestaurantId = restaurants[0].id;
 
-    const response: Response = await request(app.getHttpServer())
+    const response: Response = await request(httpApp)
       .get(`/restaurants/${firstRestaurantId}`)
       .expect(200);
 
@@ -87,7 +91,7 @@ describe('Restaurants (e2e)', () => {
   });
 
   it('GET /restaurants/:id/tables returns restaurant tables', async () => {
-    const restaurantsResponse: Response = await request(app.getHttpServer())
+    const restaurantsResponse: Response = await request(httpApp)
       .get('/restaurants')
       .expect(200);
 
@@ -97,7 +101,7 @@ describe('Restaurants (e2e)', () => {
 
     const firstRestaurantId = restaurants[0].id;
 
-    const response: Response = await request(app.getHttpServer())
+    const response: Response = await request(httpApp)
       .get(`/restaurants/${firstRestaurantId}/tables`)
       .expect(200);
 

@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request, { Response } from 'supertest';
-import { AppModule } from './../src/app.module';
-import { DbService } from './../src/infrastructure/db/db.service';
+import { AppModule } from '../apps/booking-service/src/app.module';
+import { AuthClientService } from '../apps/booking-service/src/infrastructure/auth-client/auth-client.service';
+import { DbService } from '../apps/booking-service/src/infrastructure/db/db.service';
+import type { ValidateAccessTokenResponse } from '../apps/booking-service/src/infrastructure/auth-client/auth-client.types';
 
 type UserRow = {
   id: string;
@@ -46,7 +48,14 @@ type ErrorResponseDto = {
 
 describe('Bookings (e2e)', () => {
   let app: INestApplication;
+  let httpApp: Parameters<typeof request>[0];
   let db: DbService;
+  let currentUserId: string;
+
+  const authClientServiceMock: Pick<AuthClientService, 'validateAccessToken'> =
+    {
+      validateAccessToken: jest.fn(),
+    };
 
   const getUserId = async (): Promise<string> => {
     const [user] = await db.client<UserRow[]>`
@@ -62,7 +71,7 @@ describe('Bookings (e2e)', () => {
   };
 
   const getRegularTableId = async (): Promise<string> => {
-    const restaurantsResponse: Response = await request(app.getHttpServer())
+    const restaurantsResponse: Response = await request(httpApp)
       .get('/restaurants')
       .expect(200);
 
@@ -72,7 +81,7 @@ describe('Bookings (e2e)', () => {
 
     const restaurantId = restaurants[0].id;
 
-    const tablesResponse: Response = await request(app.getHttpServer())
+    const tablesResponse: Response = await request(httpApp)
       .get(`/restaurants/${restaurantId}/tables`)
       .expect(200);
 
@@ -95,17 +104,29 @@ describe('Bookings (e2e)', () => {
     options?: CreateBookingOptions,
   ): Promise<BookingDto> => {
     const tableId = options?.tableId ?? (await getRegularTableId());
-    const userId = options?.userId ?? (await getUserId());
+    const userId = options?.userId ?? currentUserId;
     const guests = options?.guests ?? 2;
     const startAt = options?.startAt ?? new Date(Date.now() + 60 * 60 * 1000);
     const endAt =
       options?.endAt ?? new Date(startAt.getTime() + 2 * 60 * 60 * 1000);
 
-    const response: Response = await request(app.getHttpServer())
+    const validateAccessToken =
+      authClientServiceMock.validateAccessToken as jest.MockedFunction<
+        AuthClientService['validateAccessToken']
+      >;
+
+    validateAccessToken.mockResolvedValue({
+      isValid: true,
+      userId,
+      email: 'test@example.com',
+      role: 'GUEST',
+    } satisfies ValidateAccessTokenResponse);
+
+    const response: Response = await request(httpApp)
       .post('/bookings')
+      .set('Authorization', 'Bearer mocked-access-token')
       .send({
         tableId,
-        userId,
         guests,
         startAt: startAt.toISOString(),
         endAt: endAt.toISOString(),
@@ -118,10 +139,12 @@ describe('Bookings (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(AuthClientService)
+      .useValue(authClientServiceMock)
+      .compile();
 
     app = moduleFixture.createNestApplication();
-    db = app.get(DbService);
 
     app.useGlobalPipes(
       new ValidationPipe({
@@ -132,6 +155,11 @@ describe('Bookings (e2e)', () => {
     );
 
     await app.init();
+    httpApp = app.getHttpAdapter().getInstance() as Parameters<
+      typeof request
+    >[0];
+    db = app.get(DbService);
+    currentUserId = await getUserId();
   });
 
   afterAll(async () => {
@@ -159,7 +187,7 @@ describe('Bookings (e2e)', () => {
   it('PATCH /bookings/:id/confirm changes booking status to CONFIRMED', async () => {
     const booking = await createBooking();
 
-    const response: Response = await request(app.getHttpServer())
+    const response: Response = await request(httpApp)
       .patch(`/bookings/${booking.id}/confirm`)
       .expect(200);
 
@@ -173,7 +201,7 @@ describe('Bookings (e2e)', () => {
   it('PATCH /bookings/:id/cancel changes booking status to CANCELLED', async () => {
     const booking = await createBooking();
 
-    const response: Response = await request(app.getHttpServer())
+    const response: Response = await request(httpApp)
       .patch(`/bookings/${booking.id}/cancel`)
       .expect(200);
 
@@ -186,7 +214,7 @@ describe('Bookings (e2e)', () => {
 
   it('POST /bookings rejects overlapping booking for the same regular table', async () => {
     const tableId = await getRegularTableId();
-    const userId = await getUserId();
+    const userId = currentUserId;
     const startAt = new Date(Date.now() + 60 * 60 * 1000);
     const endAt = new Date(startAt.getTime() + 2 * 60 * 60 * 1000);
 
@@ -198,11 +226,23 @@ describe('Bookings (e2e)', () => {
       endAt,
     });
 
-    const overlappingResponse: Response = await request(app.getHttpServer())
+    const validateAccessToken =
+      authClientServiceMock.validateAccessToken as jest.MockedFunction<
+        AuthClientService['validateAccessToken']
+      >;
+
+    validateAccessToken.mockResolvedValue({
+      isValid: true,
+      userId,
+      email: 'test@example.com',
+      role: 'GUEST',
+    } satisfies ValidateAccessTokenResponse);
+
+    const overlappingResponse: Response = await request(httpApp)
       .post('/bookings')
+      .set('Authorization', 'Bearer mocked-access-token')
       .send({
         tableId,
-        userId,
         guests: 2,
         startAt: new Date(startAt.getTime() + 30 * 60 * 1000).toISOString(),
         endAt: new Date(endAt.getTime() + 30 * 60 * 1000).toISOString(),

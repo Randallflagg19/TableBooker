@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DbService } from '../../../infrastructure/db/db.service';
-import { TableRow } from '../interfaces/tables.types';
+import { TableRow } from '../infrastructure/tables.types';
 
 @Injectable()
 export class TablesService {
