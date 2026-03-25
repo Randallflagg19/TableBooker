@@ -1,4 +1,4 @@
-export type RestaurantRow = {
+export type Restaurant = {
   id: string;
   name: string;
   slug: string;

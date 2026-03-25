@@ -1,4 +1,4 @@
-export type TableRow = {
+export type Table = {
   id: string;
   restaurant_id: string;
   code: string;
