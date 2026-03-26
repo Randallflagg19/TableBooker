@@ -7,12 +7,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthGrpcController } from './interfaces/auth.grpc.controller';
+import { AuthRateLimitService } from './application/auth-rate-limit.service';
+import { RedisModule } from '../../infrastructure/redis/redis.module';
 
 @Module({
   imports: [
     DbModule,
     ConfigModule,
     PassportModule,
+    RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,6 +25,6 @@ import { AuthGrpcController } from './interfaces/auth.grpc.controller';
     }),
   ],
   controllers: [AuthController, AuthGrpcController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, AuthRateLimitService],
 })
 export class AuthModule {}
