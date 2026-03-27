@@ -255,4 +255,43 @@ describe('Bookings (e2e)', () => {
       'This table is already booked for the selected time',
     );
   });
+
+  it('GET /bookings/my returns bookings for the current user', async () => {
+    const booking = await createBooking();
+
+    const validateAccessToken =
+      authClientServiceMock.validateAccessToken as jest.MockedFunction<
+        AuthClientService['validateAccessToken']
+      >;
+
+    validateAccessToken.mockResolvedValue({
+      isValid: true,
+      userId: currentUserId,
+      email: 'test@example.com',
+      role: 'GUEST',
+    } satisfies ValidateAccessTokenResponse);
+
+    const response: Response = await request(httpApp)
+      .get('/bookings/my')
+      .set('Authorization', 'Bearer mocked-access-token')
+      .expect(200);
+
+    const bookings = response.body as BookingDto[];
+
+    expect(Array.isArray(bookings)).toBe(true);
+    expect(bookings.length).toBeGreaterThan(0);
+
+    const currentUserBooking = bookings.find((item) => item.id === booking.id);
+
+    expect(currentUserBooking).toBeDefined();
+
+    if (!currentUserBooking) {
+      throw new Error(
+        'Expected booking was not found in current user bookings',
+      );
+    }
+
+    expect(currentUserBooking.user_id).toBe(currentUserId);
+    expect(currentUserBooking.status).toBe('HOLD');
+  });
 });

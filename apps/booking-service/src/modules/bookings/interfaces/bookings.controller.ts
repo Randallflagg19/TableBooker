@@ -48,6 +48,31 @@ export class BookingsController {
     return this.bookingsService.create(dto, authResult.userId);
   }
 
+  @Get('my')
+  @ApiBearerAuth()
+  public async findMy(@Req() request: Request) {
+    const authorization = request.headers.authorization;
+
+    if (!authorization) {
+      throw new UnauthorizedException('Authorization header is missing');
+    }
+
+    const [scheme, accessToken] = authorization.split(' ');
+
+    if (scheme !== 'Bearer' || !accessToken) {
+      throw new UnauthorizedException('Invalid authorization header format');
+    }
+
+    const authResult =
+      await this.authClientService.validateAccessToken(accessToken);
+
+    if (!authResult.isValid) {
+      throw new UnauthorizedException('Invalid access token');
+    }
+
+    return this.bookingsService.findByUserId(authResult.userId);
+  }
+
   @Get(':id')
   @ApiParam({
     name: 'id',
@@ -56,18 +81,6 @@ export class BookingsController {
   })
   public async findById(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.bookingsService.findById(id);
-  }
-
-  @Get('user/:userId')
-  @ApiParam({
-    name: 'userId',
-    description: 'User ID',
-    example: 'e67747cb-70c2-4883-9ae5-d73c21d00a4a',
-  })
-  public async findByUserId(
-    @Param('userId', new ParseUUIDPipe()) userId: string,
-  ) {
-    return this.bookingsService.findByUserId(userId);
   }
 
   @Patch(':id/cancel')

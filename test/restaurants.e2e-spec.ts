@@ -23,7 +23,7 @@ type RestaurantTableDto = {
 
 describe('Restaurants (e2e)', () => {
   let app: INestApplication;
-  let httpApp: Parameters<typeof request>[0];
+  let httpServer: Parameters<typeof request>[0];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,9 +41,7 @@ describe('Restaurants (e2e)', () => {
     );
 
     await app.init();
-    httpApp = app.getHttpAdapter().getInstance() as Parameters<
-      typeof request
-    >[0];
+    httpServer = app.getHttpServer() as Parameters<typeof request>[0];
   });
 
   afterAll(async () => {
@@ -51,7 +49,7 @@ describe('Restaurants (e2e)', () => {
   });
 
   it('GET /restaurants returns a list of restaurants', async () => {
-    const response: Response = await request(httpApp)
+    const response: Response = await request(httpServer)
       .get('/restaurants')
       .expect(200);
 
@@ -66,8 +64,8 @@ describe('Restaurants (e2e)', () => {
     expect(typeof restaurants[0].updated_at).toBe('string');
   });
 
-  it('GET /restaurants/:id returns one restaurant', async () => {
-    const restaurantsResponse: Response = await request(httpApp)
+  it('GET /tables/:id returns one table', async () => {
+    const restaurantsResponse: Response = await request(httpServer)
       .get('/restaurants')
       .expect(200);
 
@@ -77,7 +75,43 @@ describe('Restaurants (e2e)', () => {
 
     const firstRestaurantId = restaurants[0].id;
 
-    const response: Response = await request(httpApp)
+    const tablesResponse: Response = await request(httpServer)
+      .get(`/restaurants/${firstRestaurantId}/tables`)
+      .expect(200);
+
+    const tables = tablesResponse.body as RestaurantTableDto[];
+
+    expect(tables.length).toBeGreaterThan(0);
+
+    const firstTableId = tables[0].id;
+
+    const response: Response = await request(httpServer)
+      .get(`/tables/${firstTableId}`)
+      .expect(200);
+
+    const table = response.body as RestaurantTableDto;
+
+    expect(table.id).toBe(firstTableId);
+    expect(table.restaurant_id).toBe(firstRestaurantId);
+    expect(typeof table.code).toBe('string');
+    expect(typeof table.capacity).toBe('number');
+    expect(['REGULAR', 'SHARED']).toContain(table.kind);
+    expect(typeof table.created_at).toBe('string');
+    expect(typeof table.updated_at).toBe('string');
+  });
+
+  it('GET /restaurants/:id returns one restaurant', async () => {
+    const restaurantsResponse: Response = await request(httpServer)
+      .get('/restaurants')
+      .expect(200);
+
+    const restaurants = restaurantsResponse.body as RestaurantDto[];
+
+    expect(restaurants.length).toBeGreaterThan(0);
+
+    const firstRestaurantId = restaurants[0].id;
+
+    const response: Response = await request(httpServer)
       .get(`/restaurants/${firstRestaurantId}`)
       .expect(200);
 
@@ -91,7 +125,7 @@ describe('Restaurants (e2e)', () => {
   });
 
   it('GET /restaurants/:id/tables returns restaurant tables', async () => {
-    const restaurantsResponse: Response = await request(httpApp)
+    const restaurantsResponse: Response = await request(httpServer)
       .get('/restaurants')
       .expect(200);
 
@@ -101,7 +135,7 @@ describe('Restaurants (e2e)', () => {
 
     const firstRestaurantId = restaurants[0].id;
 
-    const response: Response = await request(httpApp)
+    const response: Response = await request(httpServer)
       .get(`/restaurants/${firstRestaurantId}/tables`)
       .expect(200);
 
