@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tablebooker_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d tablebooker_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      POSTGRES_DB: tablebooker_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_PORT: 5434
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5434/tablebooker_test
+      JWT_ACCESS_SECRET: super-secret-access-key
+      JWT_REFRESH_SECRET: super-secret-refresh-key
+      AUTH_SERVICE_PORT: 3001
+      AUTH_SERVICE_GRPC_HOST: 0.0.0.0
+      AUTH_SERVICE_GRPC_PORT: 50051
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Prepare test database schema
+        run: psql "$DATABASE_URL" -f sql/schema.sql
+
+      - name: Seed test database users
+        run: psql "$DATABASE_URL" -f sql/seed-users.sql
+
+      - name: Seed test database restaurants
+        run: psql "$DATABASE_URL" -f sql/seed-restaurants.sql
+
+      - name: Run e2e tests
+        run: yarn test:e2e
