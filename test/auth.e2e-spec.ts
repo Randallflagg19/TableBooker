@@ -291,4 +291,30 @@ describe('Auth (e2e)', () => {
 
     expect(error.message).toBe('Invalid refresh token');
   });
+
+  it('GET /auth/me rejects invalid access token', async () => {
+    const response: Response = await request(httpApp)
+      .get('/auth/me')
+      .set('Authorization', 'Bearer invalid-access-token')
+      .expect(401);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(error.statusCode).toBe(401);
+    expect(error.message).toBe('Unauthorized');
+  });
+
+  it('POST /auth/refresh rejects invalid refresh token', async () => {
+    const response: Response = await request(httpApp)
+      .post('/auth/refresh')
+      .send({
+        refreshToken: 'invalid-refresh-token',
+      })
+      .expect(401);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(error.statusCode).toBe(401);
+    expect(error.message).toBe('Invalid refresh token');
+  });
 });

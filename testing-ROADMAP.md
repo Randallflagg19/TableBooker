@@ -108,7 +108,7 @@
 
 ### Статус
 
-`Next`
+`Done`
 
 ### Что уже сделано
 
@@ -141,7 +141,7 @@
 
 ### Статус
 
-`Next After Step 4`
+`Done`
 
 ### Что делаем
 
@@ -169,7 +169,7 @@
 
 ### Статус
 
-`After gRPC`
+`Done`
 
 ### Что делаем
 
@@ -197,7 +197,7 @@
 
 ### Статус
 
-`After Redis Tests`
+`Done`
 
 ### Что делаем
 
@@ -270,3 +270,16 @@
 - Redis use cases подтверждены тестами;
 - ключевые негативные сценарии покрыты;
 - `CI` стабильно прогоняет тесты на push и pull request.
+
+## Current Status
+
+Сейчас тестовый этап можно считать завершённым.
+
+Уже есть:
+
+- happy path покрытие для `auth-service`;
+- happy path покрытие для `booking-service`;
+- отдельный `gRPC` integration test;
+- Redis-focused integration tests;
+- негативные сценарии для auth, restaurants, tables и bookings;
+- рабочий `CI` на `push` и `pull_request`.

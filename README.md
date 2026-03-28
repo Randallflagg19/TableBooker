@@ -12,6 +12,8 @@
 - logout с инвалидацией refresh token;
 - создание брони от имени текущего пользователя;
 - проверку пользователя в `booking-service` через `auth-service` по `gRPC`;
+- rate limiting в `auth-service` через `Redis`;
+- read cache в `booking-service` через `Redis`;
 - проверку конфликтов по времени;
 - автоистечение `HOLD`-броней.
 
@@ -38,12 +40,20 @@
   - пароль хранится только в виде `argon2` hash;
   - access token защищает маршруты;
   - refresh token позволяет получить новый access token;
+  - rate limiting включён для `register`, `login`, `refresh`;
   - `POST /bookings` не принимает `userId` в body;
   - `booking-service` получает current user через `auth-service` по `gRPC`;
 - booking-flow:
   - проверка конфликтов по времени;
   - поддержка `REGULAR` и `SHARED` столов;
-  - автоистечение `HOLD` через cron-задачу.
+  - автоистечение `HOLD` через cron-задачу;
+  - read cache для ресторанов и столов через `Redis`;
+- testing:
+  - e2e тесты для `auth-service`;
+  - e2e тесты для `booking-service`;
+  - отдельный `gRPC` integration test;
+  - Redis integration tests;
+  - `GitHub Actions` прогоняет `yarn test:e2e` на `push` и `pull_request`.
 
 ## Architecture
 
@@ -90,12 +100,14 @@
 - NestJS
 - PostgreSQL
 - `postgres` driver without ORM
+- Redis
 - Swagger
 - `@nestjs/schedule`
 - JWT + Passport
 - `argon2`
 - gRPC (`@nestjs/microservices`, `@grpc/grpc-js`, `@grpc/proto-loader`)
 - Docker Compose
+- GitHub Actions
 
 ## Main Entities
 
@@ -119,7 +131,7 @@
 
 ## Local Run
 
-### 1. Start PostgreSQL
+### 1. Start infrastructure
 
 ```bash
 docker compose up -d
@@ -151,6 +163,7 @@ yarn start:booking:dev
 - `auth-service` gRPC: `50051`
 - `booking-service` HTTP: `3002`
 - PostgreSQL: `5434`
+- Redis: `6379`
 
 ## Swagger
 
@@ -182,6 +195,9 @@ AUTH_SERVICE_GRPC_HOST=0.0.0.0
 AUTH_SERVICE_GRPC_PORT=50051
 
 BOOKING_SERVICE_PORT=3002
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
 Для тестов используется отдельный `.env.test`.
@@ -245,14 +261,26 @@ Response:
 
 - Auth / backend roadmap: [README_TableBooker.md](./README_TableBooker.md)
 - gRPC migration roadmap: [grpc-ROADMAP.md](./grpc-ROADMAP.md)
+- Redis roadmap: [redis-ROADMAP.md](./redis-ROADMAP.md)
+- Testing roadmap: [testing-ROADMAP.md](./testing-ROADMAP.md)
+- Notifications + RabbitMQ roadmap: [notifications-rabbitmq-ROADMAP.md](./notifications-rabbitmq-ROADMAP.md)
+
+## Quality
+
+В проекте уже есть:
+
+- e2e тесты на `auth-service`;
+- e2e тесты на `booking-service`;
+- отдельный тест на реальный `gRPC` flow;
+- Redis-focused integration tests;
+- `GitHub Actions` workflow для автоматического прогона `yarn test:e2e`.
 
 ## Next Ideas
 
 Следующие разумные шаги для развития проекта:
 
-- Redis для rate limit или кэша;
-- e2e tests для межсервисного flow;
 - notifications-service;
 - RabbitMQ для событий;
+- email/SMS интеграции поверх notification-flow;
 - API gateway;
 - frontend client.

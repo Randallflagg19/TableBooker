@@ -151,4 +151,34 @@ describe('Restaurants (e2e)', () => {
     expect(typeof tables[0].created_at).toBe('string');
     expect(typeof tables[0].updated_at).toBe('string');
   });
+
+  it('GET /restaurants/:id returns 404 for non-existent restaurant', async () => {
+    const response: Response = await request(httpServer)
+      .get('/restaurants/00000000-0000-0000-0000-000000000000')
+      .expect(404);
+
+    const error = response.body as {
+      message: string;
+      error: string;
+      statusCode: number;
+    };
+
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Restaurant not found');
+  });
+
+  it('GET /tables/:id returns 404 for non-existent table', async () => {
+    const response: Response = await request(httpServer)
+      .get('/tables/00000000-0000-0000-0000-000000000000')
+      .expect(404);
+
+    const error = response.body as {
+      message: string;
+      error: string;
+      statusCode: number;
+    };
+
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Table not found');
+  });
 });

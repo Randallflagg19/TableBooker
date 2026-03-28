@@ -294,4 +294,26 @@ describe('Bookings (e2e)', () => {
     expect(currentUserBooking.user_id).toBe(currentUserId);
     expect(currentUserBooking.status).toBe('HOLD');
   });
+
+  it('PATCH /bookings/:id/confirm returns 404 for non-existent booking', async () => {
+    const response: Response = await request(httpApp)
+      .patch('/bookings/00000000-0000-0000-0000-000000000000/confirm')
+      .expect(404);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Booking not found');
+  });
+
+  it('PATCH /bookings/:id/cancel returns 404 for non-existent booking', async () => {
+    const response: Response = await request(httpApp)
+      .patch('/bookings/00000000-0000-0000-0000-000000000000/cancel')
+      .expect(404);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(error.statusCode).toBe(404);
+    expect(error.message).toBe('Booking not found');
+  });
 });
