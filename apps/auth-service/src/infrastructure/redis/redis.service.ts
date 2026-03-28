@@ -49,4 +49,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     return value;
   }
+
+  public async del(key: string): Promise<void> {
+    await this.client.del(key);
+  }
 }
