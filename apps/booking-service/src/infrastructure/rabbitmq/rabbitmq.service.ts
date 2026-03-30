@@ -1,0 +1,60 @@
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import amqp, { Channel, ChannelModel } from 'amqplib';
+
+@Injectable()
+export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(RabbitMqService.name);
+  private connection: ChannelModel | null = null;
+  private channel: Channel | null = null;
+
+  public constructor(private readonly configService: ConfigService) {}
+
+  public async onModuleInit() {
+    const host = this.configService.getOrThrow<string>('RABBITMQ_HOST');
+    const port = this.configService.getOrThrow<string>('RABBITMQ_PORT');
+
+    this.connection = await amqp.connect(`amqp://${host}:${port}`);
+    this.channel = await this.connection.createChannel();
+
+    this.logger.log('RabbitMQ connected');
+  }
+
+  public async onModuleDestroy() {
+    if (this.channel) {
+      await this.channel.close();
+    }
+
+    if (this.connection) {
+      await this.connection.close();
+    }
+  }
+
+  public async publish(
+    exchange: string,
+    routingKey: string,
+    payload: unknown,
+  ): Promise<void> {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel is not initialized');
+    }
+
+    await this.channel.assertExchange(exchange, 'topic', {
+      durable: true,
+    });
+
+    this.channel.publish(
+      exchange,
+      routingKey,
+      Buffer.from(JSON.stringify(payload)),
+      {
+        persistent: true,
+      },
+    );
+  }
+}

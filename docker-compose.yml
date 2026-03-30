@@ -21,6 +21,17 @@ services:
     volumes:
       - redis_data:/data
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: tablebooker_rabbitmq
+    restart: unless-stopped
+    ports:
+      - '${RABBITMQ_PORT}:5672'
+      - '${RABBITMQ_MANAGEMENT_PORT}:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:

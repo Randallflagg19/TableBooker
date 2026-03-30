@@ -110,6 +110,8 @@
 
 ## Step 1. Define Notification Responsibilities
 
+Status: done
+
 ### Что делаем
 
 Фиксируем, что именно будет обязанностью `notification-service`.
@@ -127,6 +129,8 @@
 
 ## Step 2. Add RabbitMQ To Local Infrastructure
 
+Status: done
+
 ### Что делаем
 
 Добавляем `RabbitMQ` в локальную инфраструктуру проекта.
@@ -143,6 +147,8 @@
 - сервисы могут к нему подключаться.
 
 ## Step 3. Create Notification Service Skeleton
+
+Status: done
 
 ### Что делаем
 
@@ -165,6 +171,8 @@
 
 ## Step 4. Add RabbitMQ Infrastructure Modules
 
+Status: done
+
 ### Что делаем
 
 Подключаем RabbitMQ client/consumer infrastructure.
@@ -180,6 +188,8 @@
 - notification-service умеет его получать.
 
 ## Step 5. Publish Booking Events
+
+Status: done
 
 ### Что делаем
 
@@ -201,6 +211,8 @@
 
 ## Step 6. Consume Events In Notification Service
 
+Status: done
+
 ### Что делаем
 
 Обрабатываем события в `notification-service`.
@@ -217,6 +229,8 @@
 - связь между сервисами подтверждена вручную.
 
 ## Step 7. Define Event Contracts
+
+Status: done
 
 ### Что делаем
 
@@ -244,6 +258,8 @@
 
 ## Step 8. Manual Verification
 
+Status: done
+
 ### Что проверяем
 
 1. RabbitMQ поднят локально
@@ -258,6 +274,15 @@
 - RabbitMQ недоступен;
 - booking-service не падает молча;
 - consumer логирует ошибку предсказуемо;
+
+## Итог
+
+MVP для `Notifications + RabbitMQ` завершён:
+
+- `booking-service` публикует события `booking.confirmed` и `booking.cancelled`;
+- `notification-service` получает и логирует эти события;
+- общий контракт событий вынесен в `libs/contracts/booking-events.contract.ts`;
+- ручная проверка end-to-end flow выполнена локально.
 - failure path понятен.
 
 ### Definition of Done

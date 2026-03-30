@@ -7,10 +7,20 @@ import { DbService } from '../../../infrastructure/db/db.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { Booking } from '../infrastructure/booking.type';
 import { RestaurantTable } from '../infrastructure/restaurant-table.type';
+import { RabbitMqService } from '../../../infrastructure/rabbitmq/rabbitmq.service';
+import {
+  BOOKING_EVENTS_EXCHANGE,
+  BOOKING_CONFIRMED_EVENT,
+  BOOKING_CANCELLED_EVENT,
+  BookingEventPayload,
+} from '../../../../../../libs/contracts/booking-events.contract';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly db: DbService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly rabbitMqService: RabbitMqService,
+  ) {}
 
   public async create(dto: CreateBookingDto, userId: string) {
     const [table] = await this.db.client<RestaurantTable[]>`
@@ -122,6 +132,21 @@ export class BookingsService {
       RETURNING *
     `;
 
+    const payload: BookingEventPayload = {
+      bookingId: updatedBooking.id,
+      userId: updatedBooking.user_id,
+      tableId: updatedBooking.table_id,
+      status: 'CANCELLED',
+      startAt: updatedBooking.start_at,
+      endAt: updatedBooking.end_at,
+    };
+
+    await this.rabbitMqService.publish(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CANCELLED_EVENT,
+      payload,
+    );
+
     return updatedBooking;
   }
 
@@ -155,6 +180,21 @@ export class BookingsService {
       WHERE id = ${id}
       RETURNING *
     `;
+
+    const payload: BookingEventPayload = {
+      bookingId: updatedBooking.id,
+      userId: updatedBooking.user_id,
+      tableId: updatedBooking.table_id,
+      status: 'CONFIRMED',
+      startAt: updatedBooking.start_at,
+      endAt: updatedBooking.end_at,
+    };
+
+    await this.rabbitMqService.publish(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CONFIRMED_EVENT,
+      payload,
+    );
 
     return updatedBooking;
   }
