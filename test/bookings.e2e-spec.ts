@@ -4,7 +4,10 @@ import request, { Response } from 'supertest';
 import { AppModule } from '../apps/booking-service/src/app.module';
 import { AuthClientService } from '../apps/booking-service/src/infrastructure/auth-client/auth-client.service';
 import { DbService } from '../apps/booking-service/src/infrastructure/db/db.service';
-import type { ValidateAccessTokenResponse } from '../apps/booking-service/src/infrastructure/auth-client/auth-client.types';
+import type {
+  GetUserContactResponse,
+  ValidateAccessTokenResponse,
+} from '../apps/booking-service/src/infrastructure/auth-client/auth-client.types';
 
 type UserRow = {
   id: string;
@@ -52,10 +55,13 @@ describe('Bookings (e2e)', () => {
   let db: DbService;
   let currentUserId: string;
 
-  const authClientServiceMock: Pick<AuthClientService, 'validateAccessToken'> =
-    {
-      validateAccessToken: jest.fn(),
-    };
+  const authClientServiceMock: Pick<
+    AuthClientService,
+    'validateAccessToken' | 'getUserContact'
+  > = {
+    validateAccessToken: jest.fn(),
+    getUserContact: jest.fn(),
+  };
 
   const getUserId = async (): Promise<string> => {
     const [user] = await db.client<UserRow[]>`
@@ -114,6 +120,10 @@ describe('Bookings (e2e)', () => {
       authClientServiceMock.validateAccessToken as jest.MockedFunction<
         AuthClientService['validateAccessToken']
       >;
+    const getUserContact =
+      authClientServiceMock.getUserContact as jest.MockedFunction<
+        AuthClientService['getUserContact']
+      >;
 
     validateAccessToken.mockResolvedValue({
       isValid: true,
@@ -121,6 +131,11 @@ describe('Bookings (e2e)', () => {
       email: 'test@example.com',
       role: 'GUEST',
     } satisfies ValidateAccessTokenResponse);
+    getUserContact.mockResolvedValue({
+      found: true,
+      email: 'test@example.com',
+      phone: '',
+    } satisfies GetUserContactResponse);
 
     const response: Response = await request(httpApp)
       .post('/bookings')
