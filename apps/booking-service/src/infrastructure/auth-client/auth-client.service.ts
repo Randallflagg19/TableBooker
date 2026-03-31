@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import type {
   AuthGrpcService,
   ValidateAccessTokenResponse,
+  GetUserContactResponse,
 } from './auth-client.types';
 
 @Injectable()
@@ -31,6 +32,16 @@ export class AuthClientService implements OnModuleInit {
     try {
       return await firstValueFrom(
         this.authGrpcService.ValidateAccessToken({ accessToken }),
+      );
+    } catch {
+      throw new ServiceUnavailableException('Auth service is unavailable');
+    }
+  }
+
+  public async getUserContact(userId: string): Promise<GetUserContactResponse> {
+    try {
+      return await firstValueFrom(
+        this.authGrpcService.GetUserContact({ userId }),
       );
     } catch {
       throw new ServiceUnavailableException('Auth service is unavailable');

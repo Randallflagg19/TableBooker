@@ -259,11 +259,13 @@ Response:
 
 ## Project Roadmaps
 
-- Auth / backend roadmap: [README_TableBooker.md](./README_TableBooker.md)
-- gRPC migration roadmap: [grpc-ROADMAP.md](./grpc-ROADMAP.md)
-- Redis roadmap: [redis-ROADMAP.md](./redis-ROADMAP.md)
-- Testing roadmap: [testing-ROADMAP.md](./testing-ROADMAP.md)
-- Notifications + RabbitMQ roadmap: [notifications-rabbitmq-ROADMAP.md](./notifications-rabbitmq-ROADMAP.md)
+- Backend roadmap: [01-backend.md](./zz-roadmaps/01-backend.md)
+- Auth roadmap: [02-auth.md](./zz-roadmaps/02-auth.md)
+- gRPC migration roadmap: [03-grpc-migration.md](./zz-roadmaps/03-grpc-migration.md)
+- Redis roadmap: [04-redis.md](./zz-roadmaps/04-redis.md)
+- Testing roadmap: [05-testing.md](./zz-roadmaps/05-testing.md)
+- Notifications + RabbitMQ roadmap: [06-notifications-rabbitmq.md](./zz-roadmaps/06-notifications-rabbitmq.md)
+- Notifications providers roadmap: [07-notifications-providers.md](./zz-roadmaps/07-notifications-providers.md)
 
 ## Quality
 

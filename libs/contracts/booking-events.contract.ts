@@ -10,4 +10,6 @@ export type BookingEventPayload = {
   status: 'CONFIRMED' | 'CANCELLED';
   startAt: string;
   endAt: string;
+  email: string | null;
+  phone: string | null;
 };

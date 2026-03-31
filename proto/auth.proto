@@ -4,6 +4,7 @@ package auth;
 
 service AuthService {
   rpc ValidateAccessToken(ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
+  rpc GetUserContact(GetUserContactRequest) returns (GetUserContactResponse);
 }
 
 message ValidateAccessTokenRequest {
@@ -15,4 +16,14 @@ message ValidateAccessTokenResponse {
   string userId = 2;
   string email = 3;
   string role = 4;
+}
+
+message GetUserContactRequest {
+  string userId = 1;
+}
+
+message GetUserContactResponse {
+  bool found = 1;
+  string email = 2;
+  string phone = 3;
 }

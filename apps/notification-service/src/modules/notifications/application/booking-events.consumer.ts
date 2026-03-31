@@ -7,12 +7,16 @@ import {
   BOOKING_CANCELLED_EVENT,
   BookingEventPayload,
 } from '../../../../../../libs/contracts/booking-events.contract';
+import { NotificationDispatcherService } from './notification-dispatcher.service';
 
 @Injectable()
 export class BookingEventsConsumer implements OnModuleInit {
   private readonly logger = new Logger(BookingEventsConsumer.name);
 
-  public constructor(private readonly rabbitMqService: RabbitMqService) {}
+  public constructor(
+    private readonly rabbitMqService: RabbitMqService,
+    private readonly notificationDispatcherService: NotificationDispatcherService,
+  ) {}
 
   public async onModuleInit() {
     const channel = this.rabbitMqService.getChannel();
@@ -41,7 +45,10 @@ export class BookingEventsConsumer implements OnModuleInit {
     this.logger.log(`Listening to queue: ${queue}`);
   }
 
-  private handleMessage(channel: Channel, message: ConsumeMessage): void {
+  private async handleMessage(
+    channel: Channel,
+    message: ConsumeMessage,
+  ): Promise<void> {
     try {
       const routingKey = message.fields.routingKey;
       const payload = JSON.parse(
@@ -51,13 +58,7 @@ export class BookingEventsConsumer implements OnModuleInit {
       this.logger.log(`Received event: ${routingKey}`);
       this.logger.log(`Payload: ${JSON.stringify(payload)}`);
 
-      if (routingKey === BOOKING_CONFIRMED_EVENT) {
-        this.logger.log('Send booking confirmation notification');
-      }
-
-      if (routingKey === BOOKING_CANCELLED_EVENT) {
-        this.logger.log('Send booking cancellation notification');
-      }
+      await this.notificationDispatcherService.dispatch(routingKey, payload);
 
       channel.ack(message);
     } catch (error) {

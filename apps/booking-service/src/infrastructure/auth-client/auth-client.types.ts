@@ -15,4 +15,18 @@ export type AuthGrpcService = {
   ValidateAccessToken(
     data: ValidateAccessTokenRequest,
   ): Observable<ValidateAccessTokenResponse>;
+
+  GetUserContact(
+    data: GetUserContactRequest,
+  ): Observable<GetUserContactResponse>;
+};
+
+export type GetUserContactRequest = {
+  userId: string;
+};
+
+export type GetUserContactResponse = {
+  found: boolean;
+  email: string;
+  phone: string;
 };

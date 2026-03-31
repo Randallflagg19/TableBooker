@@ -12,7 +12,10 @@ import argon2 from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../infrastructure/jwt-payload.type';
-import { ValidateAccessTokenResponse } from '../infrastructure/auth-grpc.type';
+import {
+  ValidateAccessTokenResponse,
+  GetUserContactResponse,
+} from '../infrastructure/auth-grpc.type';
 
 export type AuthTokens = {
   accessToken: string;
@@ -217,6 +220,28 @@ export class AuthService {
 
     return {
       message: 'Logged out successfully',
+    };
+  }
+
+  public async getUserContact(userId: string): Promise<GetUserContactResponse> {
+    const [user] = await this.db.client<User[]>`
+      SELECT *
+      FROM users
+      WHERE id = ${userId}
+    `;
+
+    if (!user) {
+      return {
+        found: false,
+        email: '',
+        phone: '',
+      };
+    }
+
+    return {
+      found: true,
+      email: user.email ?? '',
+      phone: user.phone ?? '',
     };
   }
 }

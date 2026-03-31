@@ -1,4 +1,4 @@
-# Notifications And RabbitMQ Roadmap
+# Roadmap 06. Notifications And RabbitMQ
 
 План следующего этапа для `TableBooker` после укрепления проекта тестами.
 

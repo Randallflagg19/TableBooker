@@ -14,12 +14,14 @@ import {
   BOOKING_CANCELLED_EVENT,
   BookingEventPayload,
 } from '../../../../../../libs/contracts/booking-events.contract';
+import { AuthClientService } from '../../../infrastructure/auth-client/auth-client.service';
 
 @Injectable()
 export class BookingsService {
   constructor(
     private readonly db: DbService,
     private readonly rabbitMqService: RabbitMqService,
+    private readonly authClientService: AuthClientService,
   ) {}
 
   public async create(dto: CreateBookingDto, userId: string) {
@@ -132,6 +134,10 @@ export class BookingsService {
       RETURNING *
     `;
 
+    const userContact = await this.authClientService.getUserContact(
+      updatedBooking.user_id,
+    );
+
     const payload: BookingEventPayload = {
       bookingId: updatedBooking.id,
       userId: updatedBooking.user_id,
@@ -139,6 +145,8 @@ export class BookingsService {
       status: 'CANCELLED',
       startAt: updatedBooking.start_at,
       endAt: updatedBooking.end_at,
+      email: userContact.found ? userContact.email || null : null,
+      phone: userContact.found ? userContact.phone || null : null,
     };
 
     await this.rabbitMqService.publish(
@@ -181,6 +189,10 @@ export class BookingsService {
       RETURNING *
     `;
 
+    const userContact = await this.authClientService.getUserContact(
+      updatedBooking.user_id,
+    );
+
     const payload: BookingEventPayload = {
       bookingId: updatedBooking.id,
       userId: updatedBooking.user_id,
@@ -188,6 +200,8 @@ export class BookingsService {
       status: 'CONFIRMED',
       startAt: updatedBooking.start_at,
       endAt: updatedBooking.end_at,
+      email: userContact.found ? userContact.email || null : null,
+      phone: userContact.found ? userContact.phone || null : null,
     };
 
     await this.rabbitMqService.publish(

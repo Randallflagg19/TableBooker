@@ -8,3 +8,13 @@ export type ValidateAccessTokenResponse = {
   email: string;
   role: string;
 };
+
+export type GetUserContactRequest = {
+  userId: string;
+};
+
+export type GetUserContactResponse = {
+  found: boolean;
+  email: string;
+  phone: string;
+};
