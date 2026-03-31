@@ -34,6 +34,17 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd="rabbitmq-diagnostics ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     env:
       NODE_ENV: test
       POSTGRES_DB: tablebooker_test
@@ -44,10 +55,15 @@ jobs:
       JWT_ACCESS_SECRET: super-secret-access-key
       JWT_REFRESH_SECRET: super-secret-refresh-key
       AUTH_SERVICE_PORT: 3001
+      BOOKING_SERVICE_PORT: 3002
+      NOTIFICATION_SERVICE_PORT: 3003
       AUTH_SERVICE_GRPC_HOST: 0.0.0.0
       AUTH_SERVICE_GRPC_PORT: 50051
       REDIS_HOST: localhost
       REDIS_PORT: 6379
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: 5672
+      RABBITMQ_MANAGEMENT_PORT: 15672
 
     steps:
       - name: Checkout repository
