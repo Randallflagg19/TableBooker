@@ -64,27 +64,42 @@ export class AuthService {
   }
 
   public async register(dto: RegisterDto): Promise<PublicUser> {
-    const [existingUser] = await this.db.client<User[]>`
-      SELECT *
-      FROM users
-      WHERE email = ${dto.email}
-    `;
+    if (dto.email) {
+      const [existingUserByEmail] = await this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE email = ${dto.email}
+      `;
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      if (existingUserByEmail) {
+        throw new ConflictException('User with this email already exists');
+      }
+    }
+
+    if (dto.phone) {
+      const [existingUserByPhone] = await this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE phone = ${dto.phone}
+      `;
+
+      if (existingUserByPhone) {
+        throw new ConflictException('User with this phone already exists');
+      }
     }
 
     const passwordHash = await argon2.hash(dto.password);
 
     const [user] = await this.db.client<User[]>`
-      INSERT INTO users (email, password_hash)
-      VALUES (${dto.email}, ${passwordHash})
+      INSERT INTO users (email, phone, password_hash)
+      VALUES (${dto.email ?? null}, ${dto.phone ?? null}, ${passwordHash})
       RETURNING *
     `;
 
     return {
       id: user.id,
       email: user.email,
+      phone: user.phone,
       role: user.role,
       created_at: user.created_at,
       updated_at: user.updated_at,
@@ -92,11 +107,21 @@ export class AuthService {
   }
 
   public async login(dto: LoginDto): Promise<AuthResponse> {
-    const [user] = await this.db.client<User[]>`
-      SELECT *
-      FROM users
-      WHERE email = ${dto.email}
-    `;
+    let user: User | undefined;
+
+    if (dto.email) {
+      [user] = await this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE email = ${dto.email}
+      `;
+    } else if (dto.phone) {
+      [user] = await this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE phone = ${dto.phone}
+      `;
+    }
 
     if (!user || !user.password_hash) {
       throw new UnauthorizedException('Invalid credentials');
@@ -114,6 +139,7 @@ export class AuthService {
     const payload = {
       sub: user.id,
       email: user.email,
+      phone: user.phone,
       role: user.role,
     };
 
@@ -147,6 +173,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         created_at: user.created_at,
         updated_at: user.updated_at,
@@ -197,6 +224,7 @@ export class AuthService {
       {
         sub: user.id,
         email: user.email,
+        phone: user.phone,
         role: user.role,
       },
       {

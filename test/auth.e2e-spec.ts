@@ -9,6 +9,7 @@ import { AuthRateLimitService } from '../apps/auth-service/src/modules/auth/appl
 type PublicUserDto = {
   id: string;
   email: string | null;
+  phone: string | null;
   role: 'GUEST' | 'ADMIN';
   created_at: string;
   updated_at: string;
@@ -16,7 +17,8 @@ type PublicUserDto = {
 
 type CurrentUserDto = {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   role: 'GUEST' | 'ADMIN';
 };
 
@@ -39,6 +41,7 @@ type ErrorResponseDto = {
 type UserRow = {
   id: string;
   email: string | null;
+  phone: string | null;
   password_hash: string | null;
   refresh_token_hash: string | null;
   role: 'GUEST' | 'ADMIN';
@@ -141,6 +144,7 @@ describe('Auth (e2e)', () => {
 
     expect(typeof user.id).toBe('string');
     expect(user.email).toBe(email);
+    expect(user.phone).toBeNull();
     expect(user.role).toBe('GUEST');
     expect(typeof user.created_at).toBe('string');
     expect(typeof user.updated_at).toBe('string');
@@ -190,6 +194,7 @@ describe('Auth (e2e)', () => {
     expect(typeof authResponse.accessToken).toBe('string');
     expect(typeof authResponse.refreshToken).toBe('string');
     expect(authResponse.user.email).toBe(email);
+    expect(authResponse.user.phone).toBeNull();
     expect(authResponse.user.role).toBe('GUEST');
   });
 
@@ -228,6 +233,7 @@ describe('Auth (e2e)', () => {
 
     expect(currentUser.id).toBe(user.id);
     expect(currentUser.email).toBe(email);
+    expect(currentUser.phone).toBeNull();
     expect(currentUser.role).toBe('GUEST');
   });
 
@@ -256,11 +262,13 @@ describe('Auth (e2e)', () => {
 
     const currentUser = meResponse.body as {
       id: string;
-      email: string;
+      email: string | null;
+      phone: string | null;
       role: 'GUEST' | 'ADMIN';
     };
 
     expect(currentUser.email).toBe(email);
+    expect(currentUser.phone).toBeNull();
     expect(currentUser.role).toBe('GUEST');
   });
 

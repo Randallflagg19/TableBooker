@@ -14,6 +14,7 @@ export type User = {
 export type PublicUser = {
   id: string;
   email: string | null;
+  phone: string | null;
   role: UserRole;
   created_at: string;
   updated_at: string;
