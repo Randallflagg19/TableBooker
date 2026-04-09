@@ -57,7 +57,7 @@
 
 ### Что делаем
 
-Добавляем в [auth.e2e-spec.ts](/Users/tapir/Programming/Restaurants/table-booker/test/auth.e2e-spec.ts) недостающие сценарии для `email-or-phone auth`.
+Добавляем в [auth.e2e-spec.ts](../test/auth.e2e-spec.ts) недостающие сценарии для `email-or-phone auth`.
 
 ### Минимум
 
@@ -118,7 +118,7 @@
 
 ### Что делаем
 
-Покрываем [notification-dispatcher.service.ts](/Users/tapir/Programming/Restaurants/table-booker/apps/notification-service/src/modules/notifications/application/notification-dispatcher.service.ts) тестами.
+Покрываем [notification-dispatcher.service.ts](../apps/notification-service/src/modules/notifications/application/notification-dispatcher.service.ts) тестами.
 
 ### Что важно проверить
 
@@ -196,7 +196,7 @@
 
 ### Что делаем
 
-После добавления новых тестов коротко пересматриваем весь каталог [test](/Users/tapir/Programming/Restaurants/table-booker/test).
+После добавления новых тестов коротко пересматриваем весь каталог [test](../test).
 
 ### Что смотрим
 

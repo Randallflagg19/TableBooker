@@ -89,3 +89,6 @@ jobs:
 
       - name: Run e2e tests
         run: yarn test:e2e
+
+      - name: Run notification unit tests
+        run: yarn jest apps/notification-service/src/modules/notifications/application/notification-dispatcher.service.spec.ts --runInBand

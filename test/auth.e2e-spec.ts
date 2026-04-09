@@ -61,25 +61,34 @@ describe('Auth (e2e)', () => {
   const createTestEmail = () =>
     `auth-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
-  const createUserInDb = async (email: string, password: string) => {
+  const createTestPhone = () => `+7999${Date.now().toString().slice(-7)}`;
+
+  const createUserInDb = async (
+    password: string,
+    options?: {
+      email?: string | null;
+      phone?: string | null;
+    },
+  ) => {
     const passwordHash = await argon2.hash(password);
 
     const [user] = await db.client<UserRow[]>`
-      INSERT INTO users (email, password_hash)
-      VALUES (${email}, ${passwordHash})
+      INSERT INTO users (email, phone, password_hash)
+      VALUES (${options?.email ?? null}, ${options?.phone ?? null}, ${passwordHash})
       RETURNING *
     `;
 
     return user;
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: {
+    email?: string;
+    phone?: string;
+    password: string;
+  }) => {
     const response: Response = await request(httpApp)
       .post('/auth/login')
-      .send({
-        email,
-        password,
-      })
+      .send(credentials)
       .expect(201);
 
     return response.body as AuthResponseDto;
@@ -114,6 +123,7 @@ describe('Auth (e2e)', () => {
     await db.client`
       DELETE FROM users
       WHERE email LIKE 'auth-e2e-%@example.com'
+        OR phone LIKE '+7999000%'
     `;
 
     await app.close();
@@ -125,6 +135,7 @@ describe('Auth (e2e)', () => {
     await db.client`
       DELETE FROM users
       WHERE email LIKE 'auth-e2e-%@example.com'
+        OR phone LIKE '+7999000%'
     `;
   });
 
@@ -179,7 +190,7 @@ describe('Auth (e2e)', () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
-    await createUserInDb(email, password);
+    await createUserInDb(password, { email });
 
     const response: Response = await request(httpApp)
       .post('/auth/login')
@@ -202,7 +213,7 @@ describe('Auth (e2e)', () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
-    await createUserInDb(email, password);
+    await createUserInDb(password, { email });
 
     const response: Response = await request(httpApp)
       .post('/auth/login')
@@ -221,8 +232,8 @@ describe('Auth (e2e)', () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
-    const user = await createUserInDb(email, password);
-    const authResponse = await login(email, password);
+    const user = await createUserInDb(password, { email });
+    const authResponse = await login({ email, password });
 
     const response: Response = await request(httpApp)
       .get('/auth/me')
@@ -241,8 +252,8 @@ describe('Auth (e2e)', () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
-    await createUserInDb(email, password);
-    const authResponse = await login(email, password);
+    await createUserInDb(password, { email });
+    const authResponse = await login({ email, password });
 
     const response: Response = await request(httpApp)
       .post('/auth/refresh')
@@ -276,8 +287,8 @@ describe('Auth (e2e)', () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
-    await createUserInDb(email, password);
-    const authResponse = await login(email, password);
+    await createUserInDb(password, { email });
+    const authResponse = await login({ email, password });
 
     const logoutResponse: Response = await request(httpApp)
       .post('/auth/logout')
@@ -324,5 +335,131 @@ describe('Auth (e2e)', () => {
 
     expect(error.statusCode).toBe(401);
     expect(error.message).toBe('Invalid refresh token');
+  });
+
+  it('POST /auth/register creates a new user with phone only', async () => {
+    const phone = createTestPhone();
+    const password = 'strongPass123';
+
+    const response: Response = await request(httpApp)
+      .post('/auth/register')
+      .send({
+        phone,
+        password,
+      })
+      .expect(201);
+
+    const user = response.body as PublicUserDto;
+
+    expect(typeof user.id).toBe('string');
+    expect(user.email).toBeNull();
+    expect(user.phone).toBe(phone);
+    expect(user.role).toBe('GUEST');
+  });
+
+  it('POST /auth/register creates a new user with email and phone', async () => {
+    const email = createTestEmail();
+    const phone = createTestPhone();
+    const password = 'strongPass123';
+
+    const response: Response = await request(httpApp)
+      .post('/auth/register')
+      .send({
+        email,
+        phone,
+        password,
+      })
+      .expect(201);
+
+    const user = response.body as PublicUserDto;
+
+    expect(user.email).toBe(email);
+    expect(user.phone).toBe(phone);
+    expect(user.role).toBe('GUEST');
+  });
+
+  it('POST /auth/register rejects request when email and phone are missing', async () => {
+    const response: Response = await request(httpApp)
+      .post('/auth/register')
+      .send({
+        password: 'strongPass123',
+      })
+      .expect(400);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(Array.isArray(error.message)).toBe(true);
+    expect(error.message).toContain('Either email or phone must be provided');
+  });
+
+  it('POST /auth/register rejects duplicate phone', async () => {
+    const phone = createTestPhone();
+    const password = 'strongPass123';
+
+    await request(httpApp)
+      .post('/auth/register')
+      .send({
+        phone,
+        password,
+      })
+      .expect(201);
+
+    const response: Response = await request(httpApp)
+      .post('/auth/register')
+      .send({
+        phone,
+        password,
+      })
+      .expect(409);
+
+    const error = response.body as ErrorResponseDto;
+
+    expect(error.message).toBe('User with this phone already exists');
+  });
+
+  it('POST /auth/login returns access and refresh tokens for phone login', async () => {
+    const phone = createTestPhone();
+    const password = 'strongPass123';
+
+    await createUserInDb(password, { phone });
+
+    const response: Response = await request(httpApp)
+      .post('/auth/login')
+      .send({
+        phone,
+        password,
+      })
+      .expect(201);
+
+    const authResponse = response.body as AuthResponseDto;
+
+    expect(typeof authResponse.accessToken).toBe('string');
+    expect(typeof authResponse.refreshToken).toBe('string');
+    expect(authResponse.user.email).toBeNull();
+    expect(authResponse.user.phone).toBe(phone);
+    expect(authResponse.user.role).toBe('GUEST');
+  });
+
+  it('GET /auth/me returns phone for phone-only user', async () => {
+    const phone = createTestPhone();
+    const password = 'strongPass123';
+
+    const user = await createUserInDb(password, { phone });
+    const authResponse = await login({
+      phone,
+      password,
+    });
+
+    const response: Response = await request(httpApp)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${authResponse.accessToken}`)
+      .expect(200);
+
+    const currentUser = response.body as CurrentUserDto;
+
+    expect(currentUser.id).toBe(user.id);
+    expect(currentUser.email).toBeNull();
+    expect(currentUser.phone).toBe(phone);
+    expect(currentUser.role).toBe('GUEST');
   });
 });

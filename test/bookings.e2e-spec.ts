@@ -8,6 +8,12 @@ import type {
   GetUserContactResponse,
   ValidateAccessTokenResponse,
 } from '../apps/booking-service/src/infrastructure/auth-client/auth-client.types';
+import { RabbitMqService } from '../apps/booking-service/src/infrastructure/rabbitmq/rabbitmq.service';
+import {
+  BOOKING_CANCELLED_EVENT,
+  BOOKING_CONFIRMED_EVENT,
+  BOOKING_EVENTS_EXCHANGE,
+} from '../libs/contracts/booking-events.contract';
 
 type UserRow = {
   id: string;
@@ -61,6 +67,10 @@ describe('Bookings (e2e)', () => {
   > = {
     validateAccessToken: jest.fn(),
     getUserContact: jest.fn(),
+  };
+
+  const rabbitMqServiceMock: Pick<RabbitMqService, 'publish'> = {
+    publish: jest.fn(),
   };
 
   const getUserId = async (): Promise<string> => {
@@ -151,12 +161,31 @@ describe('Bookings (e2e)', () => {
     return response.body as BookingDto;
   };
 
+  const mockUserContact = (contact?: {
+    found?: boolean;
+    email?: string;
+    phone?: string;
+  }) => {
+    const getUserContact =
+      authClientServiceMock.getUserContact as jest.MockedFunction<
+        AuthClientService['getUserContact']
+      >;
+
+    getUserContact.mockResolvedValue({
+      found: contact?.found ?? true,
+      email: contact?.email ?? 'test@example.com',
+      phone: contact?.phone ?? '',
+    } satisfies GetUserContactResponse);
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(AuthClientService)
       .useValue(authClientServiceMock)
+      .overrideProvider(RabbitMqService)
+      .useValue(rabbitMqServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -182,6 +211,7 @@ describe('Bookings (e2e)', () => {
   });
 
   afterEach(async () => {
+    jest.clearAllMocks();
     await db.client`DELETE FROM bookings`;
   });
 
@@ -330,5 +360,119 @@ describe('Bookings (e2e)', () => {
 
     expect(error.statusCode).toBe(404);
     expect(error.message).toBe('Booking not found');
+  });
+
+  it('PATCH /bookings/:id/confirm publishes booking.confirmed event with user contacts', async () => {
+    const booking = await createBooking();
+
+    mockUserContact({
+      found: true,
+      email: 'confirmed@example.com',
+      phone: '+79991234567',
+    });
+
+    const publish = rabbitMqServiceMock.publish as jest.MockedFunction<
+      RabbitMqService['publish']
+    >;
+
+    await request(httpApp).patch(`/bookings/${booking.id}/confirm`).expect(200);
+
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledWith(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CONFIRMED_EVENT,
+      expect.objectContaining({
+        bookingId: booking.id,
+        userId: booking.user_id,
+        tableId: booking.table_id,
+        status: 'CONFIRMED',
+        email: 'confirmed@example.com',
+        phone: '+79991234567',
+      }),
+    );
+  });
+
+  it('PATCH /bookings/:id/cancel publishes booking.cancelled event with user contacts', async () => {
+    const booking = await createBooking();
+
+    mockUserContact({
+      found: true,
+      email: 'cancelled@example.com',
+      phone: '+79997654321',
+    });
+
+    const publish = rabbitMqServiceMock.publish as jest.MockedFunction<
+      RabbitMqService['publish']
+    >;
+
+    await request(httpApp).patch(`/bookings/${booking.id}/cancel`).expect(200);
+
+    expect(publish).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledWith(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CANCELLED_EVENT,
+      expect.objectContaining({
+        bookingId: booking.id,
+        userId: booking.user_id,
+        tableId: booking.table_id,
+        status: 'CANCELLED',
+        email: 'cancelled@example.com',
+        phone: '+79997654321',
+      }),
+    );
+  });
+
+  it('PATCH /bookings/:id/confirm publishes null contacts when user contact is missing', async () => {
+    const booking = await createBooking();
+
+    mockUserContact({
+      found: false,
+      email: '',
+      phone: '',
+    });
+
+    const publish = rabbitMqServiceMock.publish as jest.MockedFunction<
+      RabbitMqService['publish']
+    >;
+
+    await request(httpApp).patch(`/bookings/${booking.id}/confirm`).expect(200);
+
+    expect(publish).toHaveBeenCalledWith(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CONFIRMED_EVENT,
+      expect.objectContaining({
+        bookingId: booking.id,
+        status: 'CONFIRMED',
+        email: null,
+        phone: null,
+      }),
+    );
+  });
+
+  it('PATCH /bookings/:id/cancel publishes null contacts when user contact is missing', async () => {
+    const booking = await createBooking();
+
+    mockUserContact({
+      found: false,
+      email: '',
+      phone: '',
+    });
+
+    const publish = rabbitMqServiceMock.publish as jest.MockedFunction<
+      RabbitMqService['publish']
+    >;
+
+    await request(httpApp).patch(`/bookings/${booking.id}/cancel`).expect(200);
+
+    expect(publish).toHaveBeenCalledWith(
+      BOOKING_EVENTS_EXCHANGE,
+      BOOKING_CANCELLED_EVENT,
+      expect.objectContaining({
+        bookingId: booking.id,
+        status: 'CANCELLED',
+        email: null,
+        phone: null,
+      }),
+    );
   });
 });
