@@ -123,7 +123,7 @@ describe('Auth (e2e)', () => {
     await db.client`
       DELETE FROM users
       WHERE email LIKE 'auth-e2e-%@example.com'
-        OR phone LIKE '+7999000%'
+        OR phone LIKE '+7999%'
     `;
 
     await app.close();
@@ -135,7 +135,7 @@ describe('Auth (e2e)', () => {
     await db.client`
       DELETE FROM users
       WHERE email LIKE 'auth-e2e-%@example.com'
-        OR phone LIKE '+7999000%'
+        OR phone LIKE '+7999%'
     `;
   });
 
