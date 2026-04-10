@@ -1,18 +1,47 @@
 # TableBooker
 
-TableBooker is a backend portfolio project for restaurant table booking built with NestJS. The project started as a modular monolith and gradually grew into a small microservice-based system with authentication, booking logic, inter-service communication, caching, event-driven notifications, and automated test coverage.
+TableBooker is a production-like backend system for restaurant table booking.
 
-The goal of the project is not just to show CRUD, but to demonstrate how a backend can evolve step by step:
+It is designed to demonstrate how a real-world backend evolves from a simple modular monolith into a microservice architecture with:
 
-- from a single codebase to multiple services;
-- from simple HTTP endpoints to `gRPC` and `RabbitMQ`;
-- from basic auth to flexible auth with `email` or `phone`;
-- from local business logic to graceful notification delivery;
-- from manual checks to a meaningful automated test suite.
+- synchronous communication via gRPC
+- asynchronous event-driven flows via RabbitMQ
+- caching and rate limiting via Redis
+- resilient notification delivery (email + SMS)
+- meaningful automated test coverage
+
+The focus of this project is not on CRUD, but on **architecture, reliability, and evolution of a system over time**.
+
+## Why This Project Matters
+
+This project showcases:
+
+- how to split a monolith into multiple services with clear boundaries
+- how services communicate using both sync (gRPC) and async (RabbitMQ) patterns
+- how to design a system that continues to work even when parts of it fail
+- how to implement real-world auth flows (access + refresh tokens, logout invalidation)
+- how to move from manual testing to structured automated tests
+
+It reflects real backend engineering challenges rather than isolated features.
+
+## What I Learned
+
+While building this project, I focused on:
+
+- designing service boundaries and responsibilities
+- implementing inter-service communication (gRPC)
+- building event-driven flows with RabbitMQ
+- handling partial failures in notification delivery
+- using Redis for both caching and rate limiting
+- writing meaningful e2e tests instead of only unit tests
+- working with PostgreSQL using raw SQL instead of an ORM
+- structuring a project for scalability and clarity
+
+This project represents a transition from writing code to thinking in terms of systems.
 
 ## Current State
 
-At the moment the backend is feature-complete enough to move on to a frontend stage.
+The backend is currently feature-complete and ready for frontend integration and deployment.
 
 Implemented:
 
