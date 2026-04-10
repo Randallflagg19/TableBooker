@@ -1,99 +1,185 @@
 # TableBooker
 
-Учебный backend-проект на **NestJS + PostgreSQL**, выросший из модульного монолита в **два микросервиса**:
+TableBooker is a backend portfolio project for restaurant table booking built with NestJS. The project started as a modular monolith and gradually grew into a small microservice-based system with authentication, booking logic, inter-service communication, caching, event-driven notifications, and automated test coverage.
 
-- `auth-service`
-- `booking-service`
+The goal of the project is not just to show CRUD, but to demonstrate how a backend can evolve step by step:
 
-Сейчас проект показывает не только CRUD, но и более интересный backend-flow:
+- from a single codebase to multiple services;
+- from simple HTTP endpoints to `gRPC` and `RabbitMQ`;
+- from basic auth to flexible auth with `email` or `phone`;
+- from local business logic to graceful notification delivery;
+- from manual checks to a meaningful automated test suite.
 
-- регистрацию и логин пользователя;
-- JWT auth с `accessToken` и `refreshToken`;
-- logout с инвалидацией refresh token;
-- создание брони от имени текущего пользователя;
-- проверку пользователя в `booking-service` через `auth-service` по `gRPC`;
-- rate limiting в `auth-service` через `Redis`;
-- read cache в `booking-service` через `Redis`;
-- проверку конфликтов по времени;
-- автоистечение `HOLD`-броней.
+## Current State
 
-## Current Status
+At the moment the backend is feature-complete enough to move on to a frontend stage.
 
-Текущий MVP завершён.
+Implemented:
 
-Реализовано:
+- three Nest applications:
+  - `auth-service`
+  - `booking-service`
+  - `notification-service`
+- user registration and login with:
+  - `email`
+  - `phone`
+  - `email + phone`
+- JWT auth with:
+  - `accessToken`
+  - `refreshToken`
+  - logout with refresh token invalidation
+- current user resolution through protected endpoints
+- booking creation on behalf of the authenticated user
+- booking confirmation and cancellation
+- booking conflict detection by time
+- support for `REGULAR` and `SHARED` tables
+- automatic expiration of `HOLD` bookings
+- `gRPC` communication between `booking-service` and `auth-service`
+- Redis-backed:
+  - auth rate limiting
+  - read caching for restaurant data
+- RabbitMQ-based booking events
+- notification dispatching through:
+  - email
+  - SMS
+- graceful notification behavior:
+  - skip missing email
+  - skip missing phone
+  - continue when one provider fails
 
-- `auth-service`:
-  - `POST /auth/register`
-  - `POST /auth/login`
-  - `POST /auth/refresh`
-  - `POST /auth/logout`
-  - `GET /auth/me`
-- `booking-service`:
-  - список ресторанов;
-  - получение столика по `id`;
-  - создание брони;
-  - подтверждение брони;
-  - отмена брони;
-  - список броней пользователя;
-- auth-flow:
-  - пароль хранится только в виде `argon2` hash;
-  - access token защищает маршруты;
-  - refresh token позволяет получить новый access token;
-  - rate limiting включён для `register`, `login`, `refresh`;
-  - `POST /bookings` не принимает `userId` в body;
-  - `booking-service` получает current user через `auth-service` по `gRPC`;
-- booking-flow:
-  - проверка конфликтов по времени;
-  - поддержка `REGULAR` и `SHARED` столов;
-  - автоистечение `HOLD` через cron-задачу;
-  - read cache для ресторанов и столов через `Redis`;
-- testing:
-  - e2e тесты для `auth-service`;
-  - e2e тесты для `booking-service`;
-  - отдельный `gRPC` integration test;
-  - Redis integration tests;
-  - `GitHub Actions` прогоняет `yarn test:e2e` на `push` и `pull_request`.
+## Services
 
-## Architecture
-
-Проект организован как monorepo с двумя Nest-приложениями:
+The monorepo currently contains three backend services:
 
 - [apps/auth-service](./apps/auth-service)
 - [apps/booking-service](./apps/booking-service)
-
-Общий gRPC-контракт лежит в:
-
-- [proto/auth.proto](./proto/auth.proto)
+- [apps/notification-service](./apps/notification-service)
 
 ### Auth Service
 
-Владеет:
+Responsible for:
 
-- таблицей `users`;
-- auth-логикой;
-- JWT validation;
-- register/login/refresh/logout/me;
-- gRPC методом `ValidateAccessToken`.
+- `users` table
+- register / login / refresh / logout / me
+- JWT issuance and validation
+- password hashing with `argon2`
+- auth rate limiting via Redis
+- `gRPC` methods for other services
+
+Main HTTP endpoints:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+- `GET /auth/me`
+
+Auth supports flexible contact input:
+
+- register with `email`
+- register with `phone`
+- register with both
+- login by `email`
+- login by `phone`
 
 ### Booking Service
 
-Владеет:
+Responsible for:
 
-- `restaurants`;
-- `restaurant_tables`;
-- `bookings`;
-- hold expiration;
-- HTTP API для бронирования.
+- `restaurants`
+- `restaurant_tables`
+- `bookings`
+- booking conflict detection
+- booking status changes
+- hold expiration scheduler
+- read cache through Redis
+- publishing booking events to RabbitMQ
 
-### Межсервисный flow
+Main HTTP endpoints:
 
-1. Клиент логинится в `auth-service`
-2. Получает `accessToken`
-3. Отправляет запрос в `booking-service` с `Authorization: Bearer <token>`
-4. `booking-service` вызывает `auth-service` по `gRPC`
-5. `auth-service` валидирует токен и возвращает current user
-6. `booking-service` создаёт бронь от имени этого пользователя
+- `GET /restaurants`
+- `GET /restaurants/:id`
+- `GET /restaurants/:id/tables`
+- `GET /tables/:id`
+- `POST /bookings`
+- `PATCH /bookings/:id/confirm`
+- `PATCH /bookings/:id/cancel`
+- `GET /bookings/my`
+
+Important rule:
+
+- `POST /bookings` does not accept `userId` from the client
+- `booking-service` resolves the current user through `auth-service` over `gRPC`
+
+### Notification Service
+
+Responsible for:
+
+- consuming booking events from RabbitMQ
+- dispatching notifications by channel
+- sending email notifications
+- sending SMS notifications
+- handling partial delivery gracefully
+
+It reacts to:
+
+- `booking.confirmed`
+- `booking.cancelled`
+
+And can send:
+
+- booking confirmation email
+- booking cancellation email
+- booking confirmation SMS
+- booking cancellation SMS
+
+## Architecture
+
+### Core Flow
+
+1. A user registers or logs in through `auth-service`.
+2. The client receives an `accessToken`.
+3. The client sends a booking request to `booking-service`.
+4. `booking-service` validates the current user through `auth-service` over `gRPC`.
+5. A booking is created with status `HOLD`.
+6. Booking status changes can publish domain events to RabbitMQ.
+7. `notification-service` consumes those events and dispatches notifications through available channels.
+
+### Communication
+
+- HTTP for public APIs
+- `gRPC` between `booking-service` and `auth-service`
+- RabbitMQ between `booking-service` and `notification-service`
+
+### Shared Contracts
+
+The project keeps shared contracts in [libs/contracts](./libs/contracts).
+
+The auth `gRPC` contract is described in:
+
+- [proto/auth.proto](./proto/auth.proto)
+
+## Booking Domain
+
+### Main Entities
+
+- `users`
+- `restaurants`
+- `restaurant_tables`
+- `bookings`
+
+### Booking Statuses
+
+- `HOLD`
+- `CONFIRMED`
+- `CANCELLED`
+- `EXPIRED`
+
+### Hold Expiration
+
+When a booking is created, it starts in `HOLD`.
+
+If it is not confirmed in time, a scheduled job changes it to `EXPIRED`, and the slot becomes available again.
 
 ## Tech Stack
 
@@ -101,33 +187,63 @@
 - PostgreSQL
 - `postgres` driver without ORM
 - Redis
+- RabbitMQ
 - Swagger
 - `@nestjs/schedule`
 - JWT + Passport
 - `argon2`
-- gRPC (`@nestjs/microservices`, `@grpc/grpc-js`, `@grpc/proto-loader`)
+- `gRPC`
+- `nodemailer`
+- external SMS provider integration
 - Docker Compose
 - GitHub Actions
+- Jest + Supertest
 
-## Main Entities
+## Testing
 
-- `users`
-- `restaurants`
-- `restaurant_tables`
-- `bookings`
+The backend has both `e2e` and service-level automated tests.
 
-## Booking Statuses
+Current coverage includes:
 
-- `HOLD`
-- `CONFIRMED`
-- `CANCELLED`
-- `EXPIRED`
+- auth e2e scenarios
+- booking e2e scenarios
+- `gRPC` integration flow
+- Redis-backed integration checks
+- booking event publishing tests
+- notification consumer tests
+- notification dispatcher tests
+- email provider tests
+- SMS provider tests
 
-## Hold Expiration
+Current local suite size:
 
-При создании бронь получает статус `HOLD`.
-Если в течение 5 минут бронь не подтверждена, фоновая cron-задача переводит её в `EXPIRED`.
-После этого слот снова становится доступным.
+- `40` e2e tests
+- `16` notification and service-level specs
+- `56` total automated tests
+
+Useful commands:
+
+```bash
+yarn test:e2e
+```
+
+```bash
+yarn jest apps/notification-service/src/modules/notifications --runInBand
+```
+
+```bash
+yarn test:e2e && yarn jest apps/notification-service/src/modules/notifications --runInBand
+```
+
+CI runs on:
+
+- `push`
+- `pull_request`
+
+and verifies:
+
+- e2e tests
+- notification service specs
 
 ## Local Run
 
@@ -137,6 +253,12 @@
 docker compose up -d
 ```
 
+This starts:
+
+- PostgreSQL
+- Redis
+- RabbitMQ
+
 ### 2. Install dependencies
 
 ```bash
@@ -145,40 +267,50 @@ yarn install
 
 ### 3. Start services
 
-`auth-service`:
+Auth service:
 
 ```bash
 yarn start:auth:dev
 ```
 
-`booking-service`:
+Booking service:
 
 ```bash
 yarn start:booking:dev
 ```
 
-## Default Ports
+Notification service:
+
+```bash
+yarn start:notification:dev
+```
+
+## Ports
 
 - `auth-service` HTTP: `3001`
 - `auth-service` gRPC: `50051`
 - `booking-service` HTTP: `3002`
+- `notification-service` HTTP: `3003`
 - PostgreSQL: `5434`
 - Redis: `6379`
+- RabbitMQ: `5672`
+- RabbitMQ management: `15672`
 
 ## Swagger
 
-- Auth service docs: [http://localhost:3001/docs](http://localhost:3001/docs)
-- Booking service docs: [http://localhost:3002/docs](http://localhost:3002/docs)
+- Auth docs: [http://localhost:3001/docs](http://localhost:3001/docs)
+- Booking docs: [http://localhost:3002/docs](http://localhost:3002/docs)
 
-Важно:
+Notes:
 
-- токен получается в `auth-service`;
-- в Swagger `booking-service` его нужно отдельно вставить через кнопку `Authorize`;
-- в реальном клиенте этот header будет подставляться автоматически.
+- log in through `auth-service` first
+- take the returned `accessToken`
+- use Swagger `Authorize` to send it to protected endpoints
+- `GET /auth/me` and booking endpoints require a valid bearer token
 
 ## Environment
 
-Основные переменные окружения:
+Main environment variables:
 
 ```env
 POSTGRES_HOST=localhost
@@ -195,33 +327,53 @@ AUTH_SERVICE_GRPC_HOST=0.0.0.0
 AUTH_SERVICE_GRPC_PORT=50051
 
 BOOKING_SERVICE_PORT=3002
+NOTIFICATION_SERVICE_PORT=3003
 
 REDIS_HOST=localhost
 REDIS_PORT=6379
+
+RABBITMQ_HOST=localhost
+RABBITMQ_PORT=5672
+RABBITMQ_MANAGEMENT_PORT=15672
 ```
 
-Для тестов используется отдельный `.env.test`.
+For tests, the project uses a dedicated test environment.
 
 ## Useful Commands
 
-Build both services:
+Install dependencies:
+
+```bash
+yarn install
+```
+
+Build:
 
 ```bash
 yarn build
 ```
 
-Build конкретный сервис:
+Build individual services:
 
 ```bash
 yarn build:auth
 yarn build:booking
 ```
 
-Start конкретный сервис:
+Start services:
 
 ```bash
 yarn start:auth
 yarn start:booking
+yarn start:notification
+```
+
+Start in watch mode:
+
+```bash
+yarn start:auth:dev
+yarn start:booking:dev
+yarn start:notification:dev
 ```
 
 Lint:
@@ -230,59 +382,40 @@ Lint:
 yarn lint
 ```
 
-E2E tests:
+## Roadmaps
 
-```bash
-yarn test:e2e
-```
+Project evolution is documented in [roadmaps](./roadmaps):
 
-## gRPC Contract
+- [01-backend.md](./roadmaps/01-backend.md)
+- [02-auth.md](./roadmaps/02-auth.md)
+- [03-grpc-migration.md](./roadmaps/03-grpc-migration.md)
+- [04-redis.md](./roadmaps/04-redis.md)
+- [05-testing.md](./roadmaps/05-testing.md)
+- [06-notifications-rabbitmq.md](./roadmaps/06-notifications-rabbitmq.md)
+- [07-notifications-providers.md](./roadmaps/07-notifications-providers.md)
+- [08-auth-email-or-phone.md](./roadmaps/08-auth-email-or-phone.md)
+- [09-testing-expansion.md](./roadmaps/09-testing-expansion.md)
 
-Сейчас используется минимальный контракт:
+## What This Project Demonstrates
 
-- `AuthService.ValidateAccessToken`
+This project is meant to show:
 
-Request:
+- practical NestJS backend work beyond simple controllers
+- SQL-first backend development without hiding everything behind an ORM
+- service boundaries and gradual architecture growth
+- `gRPC` and event-driven integration
+- caching and rate limiting
+- auth and booking business logic
+- test-driven stabilization of a non-trivial backend
 
-- `accessToken`
+## What Comes Next
 
-Response:
+The next natural stage is a frontend client.
 
-- `isValid`
-- `userId`
-- `email`
-- `role`
+At this point the backend is already strong enough to support:
 
-Контракт описан в:
-
-- [proto/auth.proto](./proto/auth.proto)
-
-## Project Roadmaps
-
-- Backend roadmap: [01-backend.md](./zz-roadmaps/01-backend.md)
-- Auth roadmap: [02-auth.md](./zz-roadmaps/02-auth.md)
-- gRPC migration roadmap: [03-grpc-migration.md](./zz-roadmaps/03-grpc-migration.md)
-- Redis roadmap: [04-redis.md](./zz-roadmaps/04-redis.md)
-- Testing roadmap: [05-testing.md](./zz-roadmaps/05-testing.md)
-- Notifications + RabbitMQ roadmap: [06-notifications-rabbitmq.md](./zz-roadmaps/06-notifications-rabbitmq.md)
-- Notifications providers roadmap: [07-notifications-providers.md](./zz-roadmaps/07-notifications-providers.md)
-
-## Quality
-
-В проекте уже есть:
-
-- e2e тесты на `auth-service`;
-- e2e тесты на `booking-service`;
-- отдельный тест на реальный `gRPC` flow;
-- Redis-focused integration tests;
-- `GitHub Actions` workflow для автоматического прогона `yarn test:e2e`.
-
-## Next Ideas
-
-Следующие разумные шаги для развития проекта:
-
-- notifications-service;
-- RabbitMQ для событий;
-- email/SMS интеграции поверх notification-flow;
-- API gateway;
-- frontend client.
+- authenticated flows
+- booking creation and management
+- restaurant browsing
+- integration through Swagger-backed manual checks
+- future UI integration without needing major backend redesign
