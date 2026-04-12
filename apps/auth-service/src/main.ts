@@ -17,6 +17,11 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  });
+
   const grpcHost = process.env.AUTH_SERVICE_GRPC_HOST ?? '0.0.0.0';
   const grpcPort = process.env.AUTH_SERVICE_GRPC_PORT ?? '50051';
   const httpPort = process.env.AUTH_SERVICE_PORT ?? 3001;
