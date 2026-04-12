@@ -3,6 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 
+import BookingForm from '@/features/bookings/ui/booking-form';
 import {
   getRestaurantById,
   getRestaurantTables,
@@ -22,11 +23,7 @@ export default function RestaurantPage() {
     enabled: Boolean(id),
   });
 
-  const {
-    data: tables,
-    isLoading: isTablesLoading,
-    isError: isTablesError,
-  } = useQuery({
+  const { data: tables, isLoading: isTablesLoading } = useQuery({
     queryKey: ['restaurant-tables', id],
     queryFn: () => getRestaurantTables(id),
     enabled: Boolean(id),
@@ -99,6 +96,8 @@ export default function RestaurantPage() {
           </div>
         )}
       </div>
+
+      {tables && tables.length > 0 ? <BookingForm tables={tables} /> : null}
     </section>
   );
 }

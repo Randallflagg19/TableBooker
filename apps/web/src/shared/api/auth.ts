@@ -44,6 +44,16 @@ export async function register(payload: RegisterPayload): Promise<PublicUser> {
   return response.data;
 }
 
+export async function refreshTokens(
+  refreshToken: string,
+): Promise<AuthResponse> {
+  const response = await authApi.post<AuthResponse>('/auth/refresh', {
+    refreshToken,
+  });
+
+  return response.data;
+}
+
 export async function getMe(accessToken: string): Promise<CurrentUser> {
   const response = await authApi.get<CurrentUser>('/auth/me', {
     headers: {

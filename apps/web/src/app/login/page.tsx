@@ -3,6 +3,8 @@
 import {
   removeAccessToken,
   setAccessToken,
+  setRefreshToken,
+  removeRefreshToken,
 } from '@/features/auth/lib/token-storage';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -49,6 +51,7 @@ export default function LoginPage() {
       const response = await login(payload);
 
       setAccessToken(response.accessToken);
+      setRefreshToken(response.refreshToken);
 
       const currentUser = await getMe(response.accessToken);
 
@@ -76,6 +79,7 @@ export default function LoginPage() {
 
   const handleLogout = () => {
     removeAccessToken();
+    removeRefreshToken();
     setCurrentUserEmail('');
     setCurrentUserRole('');
     setSuccessMessage('');
