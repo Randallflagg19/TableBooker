@@ -13,6 +13,7 @@ if (!bookingBaseUrl) {
 
 export const authApi = axios.create({
   baseURL: authBaseUrl,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },

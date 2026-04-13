@@ -1,5 +1,4 @@
 const ACCESS_TOKEN_KEY = 'tablebooker_access_token';
-const REFRESH_TOKEN_KEY = 'tablebooker_refresh_token';
 
 export function getAccessToken(): string | null {
   if (typeof window === 'undefined') {
@@ -23,28 +22,4 @@ export function removeAccessToken(): void {
   }
 
   window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-}
-
-export function setRefreshToken(token: string): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
-}
-
-export function removeRefreshToken(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }

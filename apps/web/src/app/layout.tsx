@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import './globals.css';
 import Providers from './providers';
+import AuthSessionBootstrap from '@/features/auth/ui/auth-session-bootstrap';
 
 export const metadata: Metadata = {
   title: 'TableBooker',
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="ru">
       <body>
         <Providers>
+          <AuthSessionBootstrap />
           <div className="app-shell">
             <header className="site-header">
               <div className="page-container site-header-inner">

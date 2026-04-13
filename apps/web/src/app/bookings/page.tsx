@@ -1,13 +1,10 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getValidAccessToken } from '@/features/auth/lib/auth-session';
-import {
-  getAccessToken,
-  getRefreshToken,
-} from '@/features/auth/lib/token-storage';
+import { getAccessToken } from '@/features/auth/lib/token-storage';
 
 import {
   cancelBooking,
@@ -49,10 +46,7 @@ function getServerSnapshot(): string | undefined {
 }
 
 function getClientSnapshot(): string {
-  const accessToken = getAccessToken() ?? '';
-  const refreshToken = getRefreshToken() ?? '';
-
-  return `${accessToken}::${refreshToken}`;
+  return getAccessToken() ?? '';
 }
 
 export default function BookingsPage() {
@@ -62,20 +56,37 @@ export default function BookingsPage() {
     getServerSnapshot,
   );
 
-  const [rawAccessToken = '', rawRefreshToken = ''] =
-    authSnapshot?.split('::') ?? [];
+  const accessToken = authSnapshot || null;
+  const hasSession = Boolean(accessToken);
+  const [isCheckingSession, setIsCheckingSession] = useState(!accessToken);
 
-  const accessToken = rawAccessToken || null;
-  const refreshToken = rawRefreshToken || null;
-  const hasSession = Boolean(accessToken || refreshToken);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      if (accessToken) {
+        setIsCheckingSession(false);
+        return;
+      }
+
+      const restoredAccessToken = await getValidAccessToken();
+
+      if (restoredAccessToken) {
+        queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+      }
+
+      setIsCheckingSession(false);
+    };
+
+    void checkSession();
+  }, [accessToken, queryClient]);
 
   const {
     data: bookings,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['my-bookings', accessToken, refreshToken],
+    queryKey: ['my-bookings', accessToken],
     queryFn: async () => {
       const validAccessToken = await getValidAccessToken();
 
@@ -102,7 +113,7 @@ export default function BookingsPage() {
     },
   });
 
-  if (authSnapshot === undefined) {
+  if (authSnapshot === undefined || isCheckingSession) {
     return (
       <section className="content-panel">
         <p className="eyebrow">Bookings</p>

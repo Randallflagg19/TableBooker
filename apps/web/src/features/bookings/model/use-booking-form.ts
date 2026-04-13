@@ -13,6 +13,10 @@ import {
 } from '@/features/bookings/model/booking-schema';
 import { createBooking } from '@/shared/api/bookings';
 
+type ApiErrorResponse = {
+  message?: string | string[];
+};
+
 const BOOKING_DURATION_HOURS = 2;
 
 function buildBookingDate(dateValue: string, timeValue: string): Date {
@@ -109,7 +113,10 @@ export function useBookingForm() {
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message;
+        const responseData = error.response?.data as
+          | ApiErrorResponse
+          | undefined;
+        const message = responseData?.message;
 
         if (Array.isArray(message)) {
           setServerError(message.join(', '));

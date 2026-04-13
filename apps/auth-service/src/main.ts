@@ -5,9 +5,14 @@ import { DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import cookieParser from 'cookie-parser';
+import type { RequestHandler } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const cookieParserMiddleware: RequestHandler = cookieParser();
+  app.use(cookieParserMiddleware);
 
   app.useGlobalPipes(
     new ValidationPipe({

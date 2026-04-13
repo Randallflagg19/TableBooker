@@ -41,7 +41,7 @@ This project represents a transition from writing code to thinking in terms of s
 
 ## Current State
 
-The backend is currently feature-complete and ready for frontend integration and deployment.
+The project now includes both a production-like backend and a working frontend MVP.
 
 Implemented:
 
@@ -75,14 +75,24 @@ Implemented:
   - skip missing email
   - skip missing phone
   - continue when one provider fails
+- frontend MVP in `apps/web` with:
+  - login / register / logout
+  - restaurants browsing
+  - restaurant details and tables
+  - booking creation
+  - my bookings screen
+  - confirm / cancel actions
+  - basic refresh-token-based session continuation
+  - dark themed responsive UI
 
-## Services
+## Applications
 
-The monorepo currently contains three backend services:
+The monorepo currently contains three backend services and one frontend app:
 
 - [apps/auth-service](./apps/auth-service)
 - [apps/booking-service](./apps/booking-service)
 - [apps/notification-service](./apps/notification-service)
+- [apps/web](./apps/web)
 
 ### Auth Service
 
@@ -162,6 +172,27 @@ And can send:
 - booking confirmation SMS
 - booking cancellation SMS
 
+### Web App
+
+Responsible for:
+
+- user auth screens
+- current session handling in the UI
+- restaurants browsing flow
+- restaurant details flow
+- booking creation flow
+- my bookings flow
+- booking confirm / cancel actions
+
+Main frontend routes:
+
+- `/`
+- `/login`
+- `/register`
+- `/restaurants`
+- `/restaurants/:id`
+- `/bookings`
+
 ## Architecture
 
 ### Core Flow
@@ -213,6 +244,13 @@ If it is not confirmed in time, a scheduled job changes it to `EXPIRED`, and the
 ## Tech Stack
 
 - NestJS
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- TanStack Query
+- React Hook Form
+- Zod
 - PostgreSQL
 - `postgres` driver without ORM
 - Redis
@@ -314,6 +352,16 @@ Notification service:
 yarn start:notification:dev
 ```
 
+Frontend app:
+
+```bash
+yarn start:web:dev
+```
+
+Then open:
+
+- [http://localhost:3000](http://localhost:3000)
+
 ## Ports
 
 - `auth-service` HTTP: `3001`
@@ -403,6 +451,7 @@ Start in watch mode:
 yarn start:auth:dev
 yarn start:booking:dev
 yarn start:notification:dev
+yarn start:web:dev
 ```
 
 Lint:
@@ -430,21 +479,30 @@ Project evolution is documented in [roadmaps](./roadmaps):
 This project is meant to show:
 
 - practical NestJS backend work beyond simple controllers
+- building a complete frontend MVP on top of an already-evolving backend
 - SQL-first backend development without hiding everything behind an ORM
 - service boundaries and gradual architecture growth
 - `gRPC` and event-driven integration
 - caching and rate limiting
 - auth and booking business logic
+- frontend integration with real auth and booking flows
 - test-driven stabilization of a non-trivial backend
 
 ## What Comes Next
 
-The next natural stage is a frontend client.
+The next natural stage is deeper product hardening and deployment work.
 
-At this point the backend is already strong enough to support:
+At this point the project already supports:
 
-- authenticated flows
-- booking creation and management
-- restaurant browsing
-- integration through Swagger-backed manual checks
-- future UI integration without needing major backend redesign
+- authenticated flows through the frontend UI
+- booking creation and management through the frontend UI
+- restaurant browsing through the frontend UI
+- backend integration through Swagger and direct service endpoints
+- a full MVP flow from register to booking confirmation
+
+Likely next improvements:
+
+- automated frontend tests
+- deployment setup for both backend and frontend
+- UX polish and consistency cleanup
+- stronger auth handling with `httpOnly` cookies if desired

@@ -21,10 +21,13 @@ export type PublicUser = {
   updated_at: string;
 };
 
-export type AuthResponse = {
+export type LoginResponse = {
   accessToken: string;
-  refreshToken: string;
   user: PublicUser;
+};
+
+export type RefreshResponse = {
+  accessToken: string;
 };
 
 export type CurrentUser = {
@@ -34,8 +37,8 @@ export type CurrentUser = {
   role: 'GUEST' | 'ADMIN';
 };
 
-export async function login(payload: LoginPayload): Promise<AuthResponse> {
-  const response = await authApi.post<AuthResponse>('/auth/login', payload);
+export async function login(payload: LoginPayload): Promise<LoginResponse> {
+  const response = await authApi.post<LoginResponse>('/auth/login', payload);
   return response.data;
 }
 
@@ -44,12 +47,8 @@ export async function register(payload: RegisterPayload): Promise<PublicUser> {
   return response.data;
 }
 
-export async function refreshTokens(
-  refreshToken: string,
-): Promise<AuthResponse> {
-  const response = await authApi.post<AuthResponse>('/auth/refresh', {
-    refreshToken,
-  });
+export async function refreshTokens(): Promise<RefreshResponse> {
+  const response = await authApi.post<RefreshResponse>('/auth/refresh');
 
   return response.data;
 }
@@ -60,6 +59,22 @@ export async function getMe(accessToken: string): Promise<CurrentUser> {
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  return response.data;
+}
+
+export async function logout(
+  accessToken: string,
+): Promise<{ message: string }> {
+  const response = await authApi.post<{ message: string }>(
+    '/auth/logout',
+    undefined,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
 
   return response.data;
 }

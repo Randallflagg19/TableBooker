@@ -1,16 +1,15 @@
 'use client';
 
 import {
+  getAccessToken,
   removeAccessToken,
   setAccessToken,
-  setRefreshToken,
-  removeRefreshToken,
 } from '@/features/auth/lib/token-storage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
-import { getMe, login } from '@/shared/api/auth';
+import { getMe, login, logout } from '@/shared/api/auth';
 import {
   loginSchema,
   type LoginFormValues,
@@ -35,6 +34,29 @@ export default function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    const restoreSession = async () => {
+      const accessToken = getAccessToken();
+
+      if (!accessToken) {
+        return;
+      }
+
+      try {
+        const currentUser = await getMe(accessToken);
+
+        setCurrentUserEmail(currentUser.email ?? '');
+        setCurrentUserRole(currentUser.role);
+      } catch {
+        removeAccessToken();
+        setCurrentUserEmail('');
+        setCurrentUserRole('');
+      }
+    };
+
+    void restoreSession();
+  }, []);
+
   const onSubmit = async (values: LoginFormValues) => {
     setServerError('');
     setSuccessMessage('');
@@ -51,7 +73,6 @@ export default function LoginPage() {
       const response = await login(payload);
 
       setAccessToken(response.accessToken);
-      setRefreshToken(response.refreshToken);
 
       const currentUser = await getMe(response.accessToken);
 
@@ -77,14 +98,22 @@ export default function LoginPage() {
     }
   };
 
-  const handleLogout = () => {
-    removeAccessToken();
-    removeRefreshToken();
-    setCurrentUserEmail('');
-    setCurrentUserRole('');
-    setSuccessMessage('');
+  const handleLogout = async () => {
     setServerError('');
 
+    const accessToken = getAccessToken();
+
+    try {
+      if (accessToken) {
+        await logout(accessToken);
+      }
+    } catch {
+      setServerError('Logout request failed, but local session was cleared.');
+    }
+
+    removeAccessToken();
+    setCurrentUserEmail('');
+    setCurrentUserRole('');
     setSuccessMessage('You have logged out.');
   };
 

@@ -1,9 +1,7 @@
 import { refreshTokens } from '@/shared/api/auth';
 import {
   getAccessToken,
-  getRefreshToken,
   removeAccessToken,
-  removeRefreshToken,
   setAccessToken,
 } from '@/features/auth/lib/token-storage';
 
@@ -40,21 +38,14 @@ function isAccessTokenExpired(token: string): boolean {
 }
 
 export async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-
-  if (!refreshToken) {
-    return null;
-  }
-
   try {
-    const response = await refreshTokens(refreshToken);
+    const response = await refreshTokens();
 
     setAccessToken(response.accessToken);
 
     return response.accessToken;
   } catch {
     removeAccessToken();
-    removeRefreshToken();
     return null;
   }
 }

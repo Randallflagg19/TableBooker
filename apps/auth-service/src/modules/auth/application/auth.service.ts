@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { DbService } from '../../../infrastructure/db/db.service';
 import { LoginDto } from '../dto/login.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { PublicUser, User } from '../infrastructure/user.type';
 import argon2 from 'argon2';
@@ -181,19 +180,16 @@ export class AuthService {
     };
   }
 
-  public async refresh(dto: RefreshTokenDto): Promise<{ accessToken: string }> {
+  public async refresh(refreshToken: string): Promise<{ accessToken: string }> {
     const refreshSecret =
       this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
 
     let payload: JwtPayload;
 
     try {
-      payload = await this.jwtService.verifyAsync<JwtPayload>(
-        dto.refreshToken,
-        {
-          secret: refreshSecret,
-        },
-      );
+      payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret: refreshSecret,
+      });
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -210,7 +206,7 @@ export class AuthService {
 
     const isRefreshTokenValid = await argon2.verify(
       user.refresh_token_hash,
-      dto.refreshToken,
+      refreshToken,
     );
 
     if (!isRefreshTokenValid) {
