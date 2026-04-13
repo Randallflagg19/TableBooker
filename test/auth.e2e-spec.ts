@@ -5,6 +5,8 @@ import argon2 from 'argon2';
 import { AppModule } from '../apps/auth-service/src/app.module';
 import { DbService } from '../apps/auth-service/src/infrastructure/db/db.service';
 import { AuthRateLimitService } from '../apps/auth-service/src/modules/auth/application/auth-rate-limit.service';
+import cookieParser from 'cookie-parser';
+import type { RequestHandler } from 'express';
 
 type PublicUserDto = {
   id: string;
@@ -24,7 +26,6 @@ type CurrentUserDto = {
 
 type AuthResponseDto = {
   accessToken: string;
-  refreshToken: string;
   user: PublicUserDto;
 };
 
@@ -81,6 +82,22 @@ describe('Auth (e2e)', () => {
     return user;
   };
 
+  const extractCookies = (response: Response): string[] => {
+    const setCookieHeader: unknown = response.headers['set-cookie'];
+
+    if (Array.isArray(setCookieHeader)) {
+      return setCookieHeader.filter(
+        (cookie): cookie is string => typeof cookie === 'string',
+      );
+    }
+
+    if (typeof setCookieHeader === 'string') {
+      return [setCookieHeader];
+    }
+
+    return [];
+  };
+
   const login = async (credentials: {
     email?: string;
     phone?: string;
@@ -91,7 +108,12 @@ describe('Auth (e2e)', () => {
       .send(credentials)
       .expect(201);
 
-    return response.body as AuthResponseDto;
+    const cookies = extractCookies(response);
+
+    return {
+      authResponse: response.body as AuthResponseDto,
+      cookies,
+    };
   };
 
   beforeAll(async () => {
@@ -103,7 +125,8 @@ describe('Auth (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
-
+    const cookieParserMiddleware: RequestHandler = cookieParser();
+    app.use(cookieParserMiddleware);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -186,7 +209,7 @@ describe('Auth (e2e)', () => {
     expect(error.message).toBe('User with this email already exists');
   });
 
-  it('POST /auth/login returns access and refresh tokens', async () => {
+  it('POST /auth/login returns access token and refresh cookie', async () => {
     const email = createTestEmail();
     const password = 'strongPass123';
 
@@ -201,12 +224,17 @@ describe('Auth (e2e)', () => {
       .expect(201);
 
     const authResponse = response.body as AuthResponseDto;
+    const cookies = extractCookies(response);
 
     expect(typeof authResponse.accessToken).toBe('string');
-    expect(typeof authResponse.refreshToken).toBe('string');
     expect(authResponse.user.email).toBe(email);
     expect(authResponse.user.phone).toBeNull();
     expect(authResponse.user.role).toBe('GUEST');
+
+    expect(Array.isArray(cookies)).toBe(true);
+    expect(
+      cookies?.some((cookie) => cookie.includes('tablebooker_refresh_token=')),
+    ).toBe(true);
   });
 
   it('POST /auth/login rejects invalid credentials', async () => {
@@ -233,7 +261,7 @@ describe('Auth (e2e)', () => {
     const password = 'strongPass123';
 
     const user = await createUserInDb(password, { email });
-    const authResponse = await login({ email, password });
+    const { authResponse } = await login({ email, password });
 
     const response: Response = await request(httpApp)
       .get('/auth/me')
@@ -253,13 +281,11 @@ describe('Auth (e2e)', () => {
     const password = 'strongPass123';
 
     await createUserInDb(password, { email });
-    const authResponse = await login({ email, password });
+    const { cookies } = await login({ email, password });
 
     const response: Response = await request(httpApp)
       .post('/auth/refresh')
-      .send({
-        refreshToken: authResponse.refreshToken,
-      })
+      .set('Cookie', cookies)
       .expect(201);
 
     const refreshResponse = response.body as AccessTokenResponseDto;
@@ -288,11 +314,12 @@ describe('Auth (e2e)', () => {
     const password = 'strongPass123';
 
     await createUserInDb(password, { email });
-    const authResponse = await login({ email, password });
+    const { authResponse, cookies } = await login({ email, password });
 
     const logoutResponse: Response = await request(httpApp)
       .post('/auth/logout')
       .set('Authorization', `Bearer ${authResponse.accessToken}`)
+      .set('Cookie', cookies)
       .expect(201);
 
     expect(logoutResponse.body).toEqual({
@@ -301,14 +328,11 @@ describe('Auth (e2e)', () => {
 
     const refreshResponse: Response = await request(httpApp)
       .post('/auth/refresh')
-      .send({
-        refreshToken: authResponse.refreshToken,
-      })
       .expect(401);
 
     const error = refreshResponse.body as ErrorResponseDto;
 
-    expect(error.message).toBe('Invalid refresh token');
+    expect(error.message).toBe('Missing refresh token');
   });
 
   it('GET /auth/me rejects invalid access token', async () => {
@@ -326,9 +350,7 @@ describe('Auth (e2e)', () => {
   it('POST /auth/refresh rejects invalid refresh token', async () => {
     const response: Response = await request(httpApp)
       .post('/auth/refresh')
-      .send({
-        refreshToken: 'invalid-refresh-token',
-      })
+      .set('Cookie', ['tablebooker_refresh_token=invalid-refresh-token'])
       .expect(401);
 
     const error = response.body as ErrorResponseDto;
@@ -417,7 +439,7 @@ describe('Auth (e2e)', () => {
     expect(error.message).toBe('User with this phone already exists');
   });
 
-  it('POST /auth/login returns access and refresh tokens for phone login', async () => {
+  it('POST /auth/login returns access token and refresh cookie for phone login', async () => {
     const phone = createTestPhone();
     const password = 'strongPass123';
 
@@ -432,12 +454,17 @@ describe('Auth (e2e)', () => {
       .expect(201);
 
     const authResponse = response.body as AuthResponseDto;
+    const cookies = extractCookies(response);
 
     expect(typeof authResponse.accessToken).toBe('string');
-    expect(typeof authResponse.refreshToken).toBe('string');
     expect(authResponse.user.email).toBeNull();
     expect(authResponse.user.phone).toBe(phone);
     expect(authResponse.user.role).toBe('GUEST');
+
+    expect(Array.isArray(cookies)).toBe(true);
+    expect(
+      cookies?.some((cookie) => cookie.includes('tablebooker_refresh_token=')),
+    ).toBe(true);
   });
 
   it('GET /auth/me returns phone for phone-only user', async () => {
@@ -445,7 +472,7 @@ describe('Auth (e2e)', () => {
     const password = 'strongPass123';
 
     const user = await createUserInDb(password, { phone });
-    const authResponse = await login({
+    const { authResponse } = await login({
       phone,
       password,
     });

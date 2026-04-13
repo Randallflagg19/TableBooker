@@ -3,6 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import request, { Response } from 'supertest';
 import { join } from 'path';
+import cookieParser from 'cookie-parser';
+import type { RequestHandler } from 'express';
 import { AppModule as AuthAppModule } from '../apps/auth-service/src/app.module';
 import { AppModule as BookingAppModule } from '../apps/booking-service/src/app.module';
 import { DbService as AuthDbService } from '../apps/auth-service/src/infrastructure/db/db.service';
@@ -19,7 +21,6 @@ type RestaurantTableDto = {
 
 type AuthResponseDto = {
   accessToken: string;
-  refreshToken: string;
   user: {
     id: string;
     email: string | null;
@@ -100,6 +101,9 @@ describe('gRPC auth-booking flow (e2e)', () => {
     }).compile();
 
     authApp = authModuleFixture.createNestApplication();
+
+    const cookieParserMiddleware: RequestHandler = cookieParser();
+    authApp.use(cookieParserMiddleware);
 
     authApp.useGlobalPipes(
       new ValidationPipe({
@@ -199,7 +203,6 @@ describe('gRPC auth-booking flow (e2e)', () => {
     const authResponse = loginResponse.body as AuthResponseDto;
 
     expect(typeof authResponse.accessToken).toBe('string');
-    expect(typeof authResponse.refreshToken).toBe('string');
     expect(authResponse.user.id).toBe(registeredUser.id);
     expect(authResponse.user.email).toBe(email);
     expect(authResponse.user.role).toBe('GUEST');

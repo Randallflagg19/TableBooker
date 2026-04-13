@@ -6,6 +6,8 @@ import { AppModule as BookingAppModule } from '../apps/booking-service/src/app.m
 import { DbService as AuthDbService } from '../apps/auth-service/src/infrastructure/db/db.service';
 import { RedisService as AuthRedisService } from '../apps/auth-service/src/infrastructure/redis/redis.service';
 import { RedisService as BookingRedisService } from '../apps/booking-service/src/infrastructure/redis/redis.service';
+import cookieParser from 'cookie-parser';
+import type { RequestHandler } from 'express';
 
 type ErrorResponseDto = {
   message: string | string[];
@@ -15,7 +17,6 @@ type ErrorResponseDto = {
 
 type AuthResponseDto = {
   accessToken: string;
-  refreshToken: string;
   user: {
     id: string;
     email: string | null;
@@ -64,12 +65,31 @@ describe('Redis integration (e2e)', () => {
   const createTestEmail = () =>
     `redis-e2e-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
 
+  const extractCookies = (response: Response): string[] => {
+    const setCookieHeader: unknown = response.headers['set-cookie'];
+
+    if (Array.isArray(setCookieHeader)) {
+      return setCookieHeader.filter(
+        (cookie): cookie is string => typeof cookie === 'string',
+      );
+    }
+
+    if (typeof setCookieHeader === 'string') {
+      return [setCookieHeader];
+    }
+
+    return [];
+  };
+
   beforeAll(async () => {
     const authModuleFixture: TestingModule = await Test.createTestingModule({
       imports: [AuthAppModule],
     }).compile();
 
     authApp = authModuleFixture.createNestApplication();
+
+    const cookieParserMiddleware: RequestHandler = cookieParser();
+    authApp.use(cookieParserMiddleware);
 
     authApp.useGlobalPipes(
       new ValidationPipe({
@@ -347,21 +367,21 @@ describe('Redis integration (e2e)', () => {
       .expect(201);
 
     const authResponse = loginResponse.body as AuthResponseDto;
+    const cookies = extractCookies(loginResponse);
+
+    expect(typeof authResponse.accessToken).toBe('string');
+    expect(cookies.length).toBeGreaterThan(0);
 
     for (let i = 0; i < 10; i += 1) {
       await request(authHttpServer)
         .post('/auth/refresh')
-        .send({
-          refreshToken: authResponse.refreshToken,
-        })
+        .set('Cookie', cookies)
         .expect(201);
     }
 
     const response: Response = await request(authHttpServer)
       .post('/auth/refresh')
-      .send({
-        refreshToken: authResponse.refreshToken,
-      })
+      .set('Cookie', cookies)
       .expect(429);
 
     const error = response.body as ErrorResponseDto;
