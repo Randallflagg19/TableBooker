@@ -30,7 +30,7 @@ export default function RestaurantsPage() {
       <section className="content-panel">
         <p className="eyebrow">Browse</p>
         <h1 className="section-title">Restaurants</h1>
-        <p className="rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
           Failed to load restaurants.
         </p>
       </section>
@@ -59,11 +59,11 @@ export default function RestaurantsPage() {
         {restaurants.map((restaurant) => (
           <article
             key={restaurant.id}
-            className="rounded-[24px] border border-[var(--border)] bg-white/70 p-5 shadow-sm"
+            className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
           >
             <div className="grid gap-3">
               <div>
-                <h2 className="text-2xl font-semibold text-[var(--foreground)]">
+                <h2 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--foreground)]">
                   {restaurant.name}
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted)]">

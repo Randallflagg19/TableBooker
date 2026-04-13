@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getValidAccessToken } from '@/features/auth/lib/auth-session';
 import {
@@ -9,7 +9,11 @@ import {
   getRefreshToken,
 } from '@/features/auth/lib/token-storage';
 
-import { getMyBookings } from '@/shared/api/bookings';
+import {
+  cancelBooking,
+  confirmBooking,
+  getMyBookings,
+} from '@/shared/api/bookings';
 
 function formatBookingDate(dateValue: string) {
   return new Date(dateValue).toLocaleDateString('ru-RU');
@@ -64,6 +68,7 @@ export default function BookingsPage() {
   const accessToken = rawAccessToken || null;
   const refreshToken = rawRefreshToken || null;
   const hasSession = Boolean(accessToken || refreshToken);
+  const queryClient = useQueryClient();
 
   const {
     data: bookings,
@@ -83,6 +88,20 @@ export default function BookingsPage() {
     enabled: hasSession,
   });
 
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: string) => cancelBooking(bookingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+    },
+  });
+
+  const confirmMutation = useMutation({
+    mutationFn: (bookingId: string) => confirmBooking(bookingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
+    },
+  });
+
   if (authSnapshot === undefined) {
     return (
       <section className="content-panel">
@@ -98,7 +117,7 @@ export default function BookingsPage() {
       <section className="content-panel">
         <p className="eyebrow">Bookings</p>
         <h1 className="section-title">My Bookings</h1>
-        <p className="rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
           Please log in to view your bookings.
         </p>
       </section>
@@ -120,7 +139,7 @@ export default function BookingsPage() {
       <section className="content-panel">
         <p className="eyebrow">Bookings</p>
         <h1 className="section-title">My Bookings</h1>
-        <p className="rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">
+        <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
           Failed to load your bookings.
         </p>
       </section>
@@ -149,11 +168,24 @@ export default function BookingsPage() {
         {bookings.map((booking) => (
           <article
             key={booking.id}
-            className="rounded-[24px] border border-[var(--border)] bg-white/70 p-5 shadow-sm"
+            className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-soft)] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
           >
-            <div className="grid gap-2">
+            <div className="grid gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-semibold text-[var(--foreground)]">
+                  Бронь
+                </span>
+                <span className="rounded-full border border-[var(--border)] bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">
+                  {booking.status}
+                </span>
+              </div>
+
+              <p className="text-base font-semibold text-[var(--foreground)]">
+                {formatBookingTimeRange(booking.start_at, booking.end_at)}
+              </p>
+
               <p className="text-sm text-[var(--muted)]">
-                <strong>Статус:</strong> {booking.status}
+                <strong>Дата:</strong> {formatBookingDate(booking.start_at)}
               </p>
               <p className="text-sm text-[var(--muted)]">
                 <strong>Гости:</strong> {booking.guests}
@@ -161,13 +193,36 @@ export default function BookingsPage() {
               <p className="text-sm text-[var(--muted)]">
                 <strong>Столик:</strong> {formatTableShortId(booking.table_id)}
               </p>
-              <p className="text-sm text-[var(--muted)]">
-                <strong>Дата:</strong> {formatBookingDate(booking.start_at)}
-              </p>
-              <p className="text-sm text-[var(--muted)]">
-                <strong>Время:</strong>{' '}
-                {formatBookingTimeRange(booking.start_at, booking.end_at)}
-              </p>
+
+              {booking.status === 'HOLD' || booking.status === 'CONFIRMED' ? (
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {booking.status === 'HOLD' ? (
+                    <button
+                      type="button"
+                      className="secondary-button disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => confirmMutation.mutate(booking.id)}
+                      disabled={
+                        confirmMutation.isPending || cancelMutation.isPending
+                      }
+                    >
+                      {confirmMutation.isPending
+                        ? 'Подтверждение...'
+                        : 'Подтвердить'}
+                    </button>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    className="secondary-button disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => cancelMutation.mutate(booking.id)}
+                    disabled={
+                      confirmMutation.isPending || cancelMutation.isPending
+                    }
+                  >
+                    {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </article>
         ))}

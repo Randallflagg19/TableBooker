@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { getValidAccessToken } from '@/features/auth/lib/auth-session';
 import {
@@ -25,6 +26,7 @@ export function useBookingForm() {
   const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const initialValues = getInitialBookingValues();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -93,6 +95,7 @@ export function useBookingForm() {
         },
         accessToken,
       );
+      await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
 
       setSuccessMessage(`Booking created with status ${booking.status}.`);
 

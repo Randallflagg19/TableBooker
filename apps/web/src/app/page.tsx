@@ -5,22 +5,22 @@ export default function Home() {
     <section className="hero">
       <div className="hero-copy">
         <p className="eyebrow">TableBooker</p>
-        <h1>Restaurant booking frontend</h1>
+        <h1>Find the right table for tonight.</h1>
         <p className="hero-text">
-          A clean frontend shell for authentication, restaurant browsing, and
-          booking management.
+          Discover restaurants, choose a table, and manage your bookings in a
+          warm, modern interface designed for easy evenings out.
         </p>
       </div>
 
       <div className="hero-actions">
-        <Link href="/login" className="primary-button">
-          Login
+        <Link href="/restaurants" className="primary-button">
+          Explore restaurants
         </Link>
-        <Link href="/register" className="secondary-button">
-          Register
+        <Link href="/bookings" className="secondary-button">
+          My bookings
         </Link>
-        <Link href="/restaurants" className="ghost-link">
-          Browse restaurants
+        <Link href="/login" className="ghost-link">
+          Login or register
         </Link>
       </div>
     </section>

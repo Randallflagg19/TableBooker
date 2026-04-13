@@ -1,13 +1,20 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #f4efe6;
-  --foreground: #1f1a17;
-  --surface: rgba(255, 252, 247, 0.82);
-  --border: rgba(72, 54, 44, 0.14);
-  --accent: #b84d2a;
-  --accent-dark: #8f3518;
-  --muted: #6f6259;
+  --background: #191715;
+  --background-soft: #211e1a;
+  --surface: rgba(42, 38, 34, 0.92);
+  --surface-strong: #332d28;
+  --surface-soft: rgba(255, 248, 240, 0.06);
+  --foreground: #f6efe7;
+  --muted: #b8ab9d;
+  --accent: #d27a4a;
+  --accent-dark: #b96538;
+  --accent-soft: rgba(210, 122, 74, 0.16);
+  --border: rgba(255, 240, 224, 0.12);
+  --success: #7fa37c;
+  --danger: #c96b63;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
 }
 
 * {
@@ -16,14 +23,26 @@
 
 html {
   min-height: 100%;
+  color-scheme: dark;
+  scrollbar-gutter: stable;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
+  overflow-y: scroll;
   background:
-    radial-gradient(circle at top, rgba(184, 77, 42, 0.14), transparent 32%),
-    linear-gradient(180deg, #f7f1e7 0%, #efe6d7 100%);
+    radial-gradient(
+      circle at top left,
+      rgba(210, 122, 74, 0.22),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at top right,
+      rgba(224, 138, 87, 0.14),
+      transparent 32%
+    ),
+    linear-gradient(180deg, #191715 0%, #211d19 54%, #181614 100%);
   color: var(--foreground);
   font-family: Georgia, 'Times New Roman', serif;
 }
@@ -31,6 +50,13 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 .app-shell {
@@ -46,37 +72,42 @@ a {
 .hero {
   display: grid;
   gap: 28px;
-  padding: 48px;
-  margin-top: 32px;
+  padding: 52px;
+  margin-top: 36px;
   border: 1px solid var(--border);
-  border-radius: 32px;
-  background: var(--surface);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 60px rgba(34, 23, 17, 0.08);
+  border-radius: 36px;
+  background: linear-gradient(
+    180deg,
+    rgba(56, 47, 40, 0.66) 0%,
+    rgba(38, 33, 29, 0.94) 100%
+  );
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
 }
 
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .hero h1 {
   margin: 0;
-  max-width: 10ch;
-  font-size: clamp(3rem, 8vw, 6rem);
-  line-height: 0.95;
+  max-width: 11ch;
+  font-size: clamp(3.4rem, 8vw, 6.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
 }
 
 .hero-text {
-  max-width: 52ch;
+  max-width: 54ch;
   margin: 0;
   color: var(--muted);
-  font-size: 1.05rem;
-  line-height: 1.7;
+  font-size: 1.06rem;
+  line-height: 1.8;
 }
 
 .hero-actions {
@@ -91,7 +122,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
+  min-height: 48px;
   padding: 0 18px;
   border-radius: 999px;
   font-size: 0.95rem;
@@ -100,12 +131,15 @@ a {
     transform 0.18s ease,
     background-color 0.18s ease,
     border-color 0.18s ease,
-    color 0.18s ease;
+    color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .primary-button {
+  border: 1px solid transparent;
   background: var(--accent);
-  color: #fffaf4;
+  color: #fff7f1;
+  box-shadow: 0 12px 28px rgba(210, 122, 74, 0.24);
 }
 
 .primary-button:hover {
@@ -115,11 +149,13 @@ a {
 
 .secondary-button {
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 248, 240, 0.06);
+  color: var(--foreground);
 }
 
 .secondary-button:hover {
-  border-color: rgba(72, 54, 44, 0.24);
+  border-color: rgba(255, 240, 224, 0.2);
+  background: rgba(255, 248, 240, 0.1);
   transform: translateY(-1px);
 }
 
@@ -129,6 +165,78 @@ a {
 
 .ghost-link:hover {
   color: var(--foreground);
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(16px);
+  background: rgba(25, 23, 21, 0.68);
+  border-bottom: 1px solid rgba(255, 240, 224, 0.08);
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 76px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.brand {
+  font-size: 1.14rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.site-nav a {
+  color: var(--muted);
+  font-size: 0.95rem;
+  transition: color 0.18s ease;
+}
+
+.site-nav a:hover {
+  color: var(--foreground);
+}
+
+.content-panel {
+  display: grid;
+  gap: 14px;
+  padding: 42px;
+  margin-top: 36px;
+  border: 1px solid var(--border);
+  border-radius: 32px;
+  background: linear-gradient(
+    180deg,
+    rgba(50, 44, 39, 0.84) 0%,
+    rgba(34, 30, 26, 0.96) 100%
+  );
+  box-shadow: var(--shadow);
+}
+
+.section-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.section-text {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
 }
 
 @media (max-width: 640px) {
@@ -150,69 +258,7 @@ a {
     flex-direction: column;
     align-items: stretch;
   }
-}
 
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(14px);
-  background: rgba(247, 241, 231, 0.72);
-  border-bottom: 1px solid rgba(72, 54, 44, 0.08);
-}
-
-.site-header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  min-height: 72px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.brand {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.site-nav a {
-  color: var(--muted);
-  font-size: 0.95rem;
-  transition: color 0.18s ease;
-}
-
-.site-nav a:hover {
-  color: var(--foreground);
-}
-
-.content-panel {
-  display: grid;
-  gap: 14px;
-  padding: 40px;
-  margin-top: 32px;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: var(--surface);
-  box-shadow: 0 18px 60px rgba(34, 23, 17, 0.08);
-}
-
-.section-title {
-  margin: 0;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  line-height: 1;
-}
-
-.section-text {
-  max-width: 60ch;
-  margin: 0;
-  color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.7;
-}
-
-@media (max-width: 640px) {
   .site-header-inner {
     flex-direction: column;
     align-items: flex-start;

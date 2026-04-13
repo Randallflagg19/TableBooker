@@ -25,14 +25,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
                   TableBooker
                 </Link>
 
-                <nav
-                  className="site-nav"
-                  style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}
-                >
-                  <Link href="/login">Login</Link>
-                  <Link href="/register">Register</Link>
+                <nav className="site-nav">
                   <Link href="/restaurants">Restaurants</Link>
                   <Link href="/bookings">My Bookings</Link>
+                  <Link href="/login">Login</Link>
+                  <Link href="/register">Register</Link>
                 </nav>
               </div>
             </header>

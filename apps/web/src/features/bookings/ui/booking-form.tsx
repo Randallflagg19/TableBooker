@@ -21,7 +21,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
   } = useBookingForm();
 
   return (
-    <div className="mt-10 grid gap-5 rounded-[28px] border border-[var(--border)] bg-white/75 p-6 shadow-sm">
+    <div className="mt-10 grid gap-5 rounded-[28px] border border-[var(--border)] bg-[rgba(255,248,240,0.04)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
       <div className="grid gap-2">
         <h2 className="text-2xl font-semibold text-[var(--foreground)]">
           Create Booking
@@ -42,7 +42,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
           </label>
           <select
             id="tableId"
-            className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/80 px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+            className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
             {...register('tableId')}
           >
             <option value="">Choose a table</option>
@@ -53,7 +53,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
             ))}
           </select>
           {errors.tableId ? (
-            <p className="text-sm text-red-700">{errors.tableId.message}</p>
+            <p className="text-sm text-[#f2c0b8]">{errors.tableId.message}</p>
           ) : null}
         </div>
 
@@ -69,11 +69,11 @@ export default function BookingForm({ tables }: BookingFormProps) {
               id="date"
               type="date"
               min={minDate}
-              className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/80 px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+              className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
               {...register('date')}
             />
             {errors.date ? (
-              <p className="text-sm text-red-700">{errors.date.message}</p>
+              <p className="text-sm text-[#f2c0b8]">{errors.date.message}</p>
             ) : null}
           </div>
 
@@ -86,7 +86,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
             </label>
             <select
               id="time"
-              className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/80 px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+              className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
               {...register('time')}
             >
               {availableTimes.map((time) => (
@@ -96,7 +96,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
               ))}
             </select>
             {errors.time ? (
-              <p className="text-sm text-red-700">{errors.time.message}</p>
+              <p className="text-sm text-[#f2c0b8]">{errors.time.message}</p>
             ) : null}
           </div>
         </div>
@@ -113,22 +113,22 @@ export default function BookingForm({ tables }: BookingFormProps) {
             type="number"
             min={1}
             step={1}
-            className="min-h-12 rounded-2xl border border-[var(--border)] bg-white/80 px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
+            className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
             {...register('guests', { valueAsNumber: true })}
           />
           {errors.guests ? (
-            <p className="text-sm text-red-700">{errors.guests.message}</p>
+            <p className="text-sm text-[#f2c0b8]">{errors.guests.message}</p>
           ) : null}
         </div>
 
         {serverError ? (
-          <p className="rounded-2xl bg-red-100 px-4 py-3 text-sm text-red-700">
+          <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
             {serverError}
           </p>
         ) : null}
 
         {successMessage ? (
-          <p className="rounded-2xl bg-green-100 px-4 py-3 text-sm text-green-700">
+          <p className="rounded-2xl border border-[rgba(127,163,124,0.28)] bg-[rgba(127,163,124,0.14)] px-4 py-3 text-sm text-[#cfe3cd]">
             {successMessage}
           </p>
         ) : null}

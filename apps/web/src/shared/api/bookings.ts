@@ -41,3 +41,13 @@ export async function getMyBookings(accessToken: string): Promise<Booking[]> {
 
   return response.data;
 }
+
+export async function cancelBooking(id: string): Promise<Booking> {
+  const response = await bookingApi.patch<Booking>(`/bookings/${id}/cancel`);
+  return response.data;
+}
+
+export async function confirmBooking(id: string): Promise<Booking> {
+  const response = await bookingApi.patch<Booking>(`/bookings/${id}/confirm`);
+  return response.data;
+}

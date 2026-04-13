@@ -78,7 +78,7 @@ export default function RestaurantPage() {
             {tables.map((table) => (
               <article
                 key={table.id}
-                className="rounded-[24px] border border-[var(--border)] bg-white/70 p-5 shadow-sm"
+                className="rounded-[24px] border border-[var(--border)] bg-[rgba(255,248,240,0.04)] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.18)]"
               >
                 <div className="grid gap-2">
                   <h3 className="text-xl font-semibold text-[var(--foreground)]">
