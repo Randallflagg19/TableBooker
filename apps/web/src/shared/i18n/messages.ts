@@ -52,6 +52,7 @@ export const messages = {
       sessionExpired: 'Сессия истекла. Пожалуйста, войдите снова.',
       createFailed: 'Не удалось создать бронирование.',
       createdWithStatus: 'Бронирование создано со статусом',
+      tableAlreadyBooked: 'Этот столик уже занят на выбранное время.',
       status: {
         HOLD: 'НА ПОДТВЕРЖДЕНИИ',
         CONFIRMED: 'ПОДТВЕРЖДЕНО',
@@ -200,6 +201,7 @@ export const messages = {
       sessionExpired: 'Session expired. Please log in again.',
       createFailed: 'Failed to create booking.',
       createdWithStatus: 'Booking created with status',
+      tableAlreadyBooked: 'This table is already booked for the selected time.',
       status: {
         HOLD: 'HOLD',
         CONFIRMED: 'CONFIRMED',

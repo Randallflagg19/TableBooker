@@ -287,9 +287,11 @@ If it is not confirmed in time, a scheduled job changes it to `EXPIRED`, and the
 
 ## Testing
 
-The backend has both `e2e` and service-level automated tests.
+The project now has separate backend and frontend automated test layers.
 
-Current coverage includes:
+### Backend Coverage
+
+Backend coverage includes:
 
 - auth e2e scenarios
 - booking e2e scenarios
@@ -301,13 +303,13 @@ Current coverage includes:
 - email provider tests
 - SMS provider tests
 
-Current local suite size:
+Current backend suite size:
 
 - `40` e2e tests
 - `16` notification and service-level specs
-- `56` total automated tests
+- `56` backend tests total
 
-Useful commands:
+Useful backend commands:
 
 ```bash
 yarn test:e2e
@@ -317,9 +319,39 @@ yarn test:e2e
 yarn jest apps/notification-service/src/modules/notifications --runInBand
 ```
 
+### Frontend Coverage
+
+Frontend tests live in `apps/web` and use:
+
+- `Vitest`
+- `Testing Library`
+- `jsdom`
+
+Current frontend coverage includes:
+
+- auth schema validation
+- booking schema and booking helper logic
+- locale persistence utilities
+- login page behavior
+- register page behavior
+- booking form behavior
+- locale switching in the header
+
+Useful frontend commands:
+
 ```bash
-yarn test:e2e && yarn jest apps/notification-service/src/modules/notifications --runInBand
+yarn test:web
 ```
+
+```bash
+yarn test:web:watch
+```
+
+```bash
+yarn --cwd apps/web test
+```
+
+The frontend suite is intentionally compact. It focuses on the most important UI flows and the bugs that already appeared during development, instead of trying to maximize raw coverage numbers.
 
 Frontend production build:
 
@@ -334,7 +366,8 @@ CI runs on:
 
 and verifies:
 
-- e2e tests
+- frontend tests in `apps/web`
+- backend e2e tests
 - notification service specs
 
 ## Local Run
@@ -486,6 +519,13 @@ Lint:
 yarn lint
 ```
 
+Frontend tests:
+
+```bash
+yarn test:web
+yarn test:web:watch
+```
+
 ## Roadmaps
 
 Project evolution is documented in [roadmaps](./roadmaps):
@@ -499,6 +539,7 @@ Project evolution is documented in [roadmaps](./roadmaps):
 - [07-notifications-providers.md](./roadmaps/07-notifications-providers.md)
 - [08-auth-email-or-phone.md](./roadmaps/08-auth-email-or-phone.md)
 - [09-testing-expansion.md](./roadmaps/09-testing-expansion.md)
+- [11-frontend-testing.md](./roadmaps/11-frontend-testing.md)
 - [12-i18n-and-http-only-cookies.md](./roadmaps/12-i18n-and-http-only-cookies.md)
 
 ## What This Project Demonstrates

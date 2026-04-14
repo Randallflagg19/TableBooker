@@ -107,17 +107,17 @@
 
 ### Что именно тестируем
 
-- [booking-schema.ts](/Users/tapir/Programming/Restaurants/table-booker/apps/web/src/features/bookings/model/booking-schema.ts)
+- `apps/web/src/features/bookings/model/booking-schema.ts`
   - выбор доступных временных слотов;
   - логика initial values;
   - базовые validation rules;
-- [login-schema.ts](/Users/tapir/Programming/Restaurants/table-booker/apps/web/src/features/auth/model/login-schema.ts)
+- `apps/web/src/features/auth/model/login-schema.ts`
   - `email or phone required`;
   - валидация телефона;
-- [register-schema.ts](/Users/tapir/Programming/Restaurants/table-booker/apps/web/src/features/auth/model/register-schema.ts)
+- `apps/web/src/features/auth/model/register-schema.ts`
   - пустой телефон не ломает регистрацию;
   - введённый телефон валидируется;
-- [locale-storage.ts](/Users/tapir/Programming/Restaurants/table-booker/apps/web/src/shared/i18n/locale-storage.ts)
+- `apps/web/src/shared/i18n/locale-storage.ts`
   - чтение и сохранение локали.
 
 ### Почему именно это

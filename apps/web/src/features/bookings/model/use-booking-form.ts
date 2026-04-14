@@ -129,6 +129,14 @@ export function useBookingForm() {
         }
 
         if (typeof message === 'string') {
+          if (
+            message === 'This table is already booked for the selected time' ||
+            message === 'Table is already booked for this time'
+          ) {
+            setServerError(t.bookingForm.tableAlreadyBooked);
+            return;
+          }
+
           setServerError(message);
           return;
         }
