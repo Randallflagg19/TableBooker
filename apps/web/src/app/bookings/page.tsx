@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { useLocale } from '@/shared/i18n/locale-provider';
 import { getValidAccessToken } from '@/features/auth/lib/auth-session';
 import { getAccessToken } from '@/features/auth/lib/token-storage';
 
@@ -50,6 +51,8 @@ function getClientSnapshot(): string {
 }
 
 export default function BookingsPage() {
+  const { t } = useLocale();
+
   const authSnapshot = useSyncExternalStore(
     subscribe,
     getClientSnapshot,
@@ -116,9 +119,9 @@ export default function BookingsPage() {
   if (authSnapshot === undefined || isCheckingSession) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Bookings</p>
-        <h1 className="section-title">My Bookings</h1>
-        <p className="section-text">Loading your bookings...</p>
+        <p className="eyebrow">{t.bookings.eyebrow}</p>
+        <h1 className="section-title">{t.bookings.title}</h1>
+        <p className="section-text">{t.bookings.loading}</p>
       </section>
     );
   }
@@ -126,10 +129,10 @@ export default function BookingsPage() {
   if (!hasSession) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Bookings</p>
-        <h1 className="section-title">My Bookings</h1>
+        <p className="eyebrow">{t.bookings.eyebrow}</p>
+        <h1 className="section-title">{t.bookings.title}</h1>
         <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
-          Please log in to view your bookings.
+          {t.bookings.unauthorized}
         </p>
       </section>
     );
@@ -138,9 +141,9 @@ export default function BookingsPage() {
   if (isLoading && !bookings) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Bookings</p>
-        <h1 className="section-title">My Bookings</h1>
-        <p className="section-text">Loading your bookings...</p>
+        <p className="eyebrow">{t.bookings.eyebrow}</p>
+        <h1 className="section-title">{t.bookings.title}</h1>
+        <p className="section-text">{t.bookings.loading}</p>
       </section>
     );
   }
@@ -148,10 +151,10 @@ export default function BookingsPage() {
   if (isError && !bookings) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Bookings</p>
-        <h1 className="section-title">My Bookings</h1>
+        <p className="eyebrow">{t.bookings.eyebrow}</p>
+        <h1 className="section-title">{t.bookings.title}</h1>
         <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
-          Failed to load your bookings.
+          {t.bookings.failed}
         </p>
       </section>
     );
@@ -160,20 +163,18 @@ export default function BookingsPage() {
   if (!bookings || bookings.length === 0) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Bookings</p>
-        <h1 className="section-title">My Bookings</h1>
-        <p className="section-text">You have no bookings yet.</p>
+        <p className="eyebrow">{t.bookings.eyebrow}</p>
+        <h1 className="section-title">{t.bookings.title}</h1>
+        <p className="section-text">{t.bookings.empty}</p>
       </section>
     );
   }
 
   return (
     <section className="content-panel">
-      <p className="eyebrow">Bookings</p>
-      <h1 className="section-title">My Bookings</h1>
-      <p className="section-text">
-        Review your created bookings and their current status.
-      </p>
+      <p className="eyebrow">{t.bookings.eyebrow}</p>
+      <h1 className="section-title">{t.bookings.title}</h1>
+      <p className="section-text">{t.bookings.description}</p>
 
       <div className="mt-6 grid gap-4">
         {bookings.map((booking) => (
@@ -184,10 +185,10 @@ export default function BookingsPage() {
             <div className="grid gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm font-semibold text-[var(--foreground)]">
-                  Бронь
+                  {t.bookings.bookingLabel}
                 </span>
                 <span className="rounded-full border border-[var(--border)] bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--foreground)]">
-                  {booking.status}
+                  {t.bookings.status[booking.status]}
                 </span>
               </div>
 
@@ -196,13 +197,15 @@ export default function BookingsPage() {
               </p>
 
               <p className="text-sm text-[var(--muted)]">
-                <strong>Дата:</strong> {formatBookingDate(booking.start_at)}
+                <strong>{t.bookings.date}:</strong>{' '}
+                {formatBookingDate(booking.start_at)}
               </p>
               <p className="text-sm text-[var(--muted)]">
-                <strong>Гости:</strong> {booking.guests}
+                <strong>{t.bookings.guests}:</strong> {booking.guests}
               </p>
               <p className="text-sm text-[var(--muted)]">
-                <strong>Столик:</strong> {formatTableShortId(booking.table_id)}
+                <strong>{t.bookings.table}:</strong>{' '}
+                {formatTableShortId(booking.table_id)}
               </p>
 
               {booking.status === 'HOLD' || booking.status === 'CONFIRMED' ? (
@@ -217,8 +220,8 @@ export default function BookingsPage() {
                       }
                     >
                       {confirmMutation.isPending
-                        ? 'Подтверждение...'
-                        : 'Подтвердить'}
+                        ? t.bookings.confirming
+                        : t.bookings.confirm}
                     </button>
                   ) : null}
 
@@ -230,7 +233,9 @@ export default function BookingsPage() {
                       confirmMutation.isPending || cancelMutation.isPending
                     }
                   >
-                    {cancelMutation.isPending ? 'Отмена...' : 'Отменить'}
+                    {cancelMutation.isPending
+                      ? t.bookings.cancelling
+                      : t.bookings.cancel}
                   </button>
                 </div>
               ) : null}

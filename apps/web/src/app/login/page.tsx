@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from '@/shared/i18n/locale-provider';
 import {
   getAccessToken,
   removeAccessToken,
@@ -11,11 +12,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import axios from 'axios';
 import { getMe, login, logout } from '@/shared/api/auth';
 import {
-  loginSchema,
+  createLoginSchema,
   type LoginFormValues,
 } from '@/features/auth/model/login-schema';
 
 export default function LoginPage() {
+  const { t } = useLocale();
+
   const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState('');
@@ -26,7 +29,7 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(createLoginSchema(t)),
     defaultValues: {
       email: '',
       phone: '',
@@ -57,6 +60,18 @@ export default function LoginPage() {
     void restoreSession();
   }, []);
 
+  const getRoleLabel = (role: string) => {
+    if (role === 'ADMIN') {
+      return t.common.adminRole;
+    }
+
+    if (role === 'GUEST') {
+      return t.common.guestRole;
+    }
+
+    return role;
+  };
+
   const onSubmit = async (values: LoginFormValues) => {
     setServerError('');
     setSuccessMessage('');
@@ -78,7 +93,9 @@ export default function LoginPage() {
 
       setCurrentUserEmail(currentUser.email ?? '');
       setCurrentUserRole(currentUser.role);
-      setSuccessMessage(`Welcome back, ${response.user.role.toLowerCase()}.`);
+      setSuccessMessage(
+        `${t.auth.welcomeBack}, ${getRoleLabel(response.user.role).toLowerCase()}.`,
+      );
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
@@ -89,12 +106,17 @@ export default function LoginPage() {
         }
 
         if (typeof message === 'string') {
+          if (message === 'Invalid credentials') {
+            setServerError(t.auth.invalidCredentials);
+            return;
+          }
+
           setServerError(message);
           return;
         }
       }
 
-      setServerError('Login failed. Please check your credentials.');
+      setServerError(t.auth.loginFailed);
     }
   };
 
@@ -108,22 +130,20 @@ export default function LoginPage() {
         await logout(accessToken);
       }
     } catch {
-      setServerError('Logout request failed, but local session was cleared.');
+      setServerError(t.auth.logoutFailed);
     }
 
     removeAccessToken();
     setCurrentUserEmail('');
     setCurrentUserRole('');
-    setSuccessMessage('You have logged out.');
+    setSuccessMessage(t.auth.loggedOut);
   };
 
   return (
     <section className="content-panel">
-      <p className="eyebrow">Auth</p>
-      <h1 className="section-title">Login</h1>
-      <p className="section-text">
-        Use email or phone together with your password to enter the app.
-      </p>
+      <p className="eyebrow">{t.auth.eyebrow}</p>
+      <h1 className="section-title">{t.auth.loginTitle}</h1>
+      <p className="section-text">{t.auth.loginDescription}</p>
 
       <form className="mt-6 grid gap-5" onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-2">
@@ -131,13 +151,13 @@ export default function LoginPage() {
             htmlFor="email"
             className="text-sm font-semibold text-[var(--foreground)]"
           >
-            Email
+            {t.auth.email}
           </label>
           <input
             id="email"
             type="email"
             autoComplete="username"
-            placeholder="lex@example.com"
+            placeholder={t.auth.emailPlaceholder}
             className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition placeholder:text-[rgba(184,171,157,0.7)] focus:border-[var(--accent)]"
             {...register('email')}
           />
@@ -151,12 +171,12 @@ export default function LoginPage() {
             htmlFor="phone"
             className="text-sm font-semibold text-[var(--foreground)]"
           >
-            Phone
+            {t.auth.phone}
           </label>
           <input
             id="phone"
             type="text"
-            placeholder="+79991234567"
+            placeholder={t.auth.phonePlaceholder}
             className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition placeholder:text-[rgba(184,171,157,0.7)] focus:border-[var(--accent)]"
             {...register('phone')}
           />
@@ -170,13 +190,13 @@ export default function LoginPage() {
             htmlFor="password"
             className="text-sm font-semibold text-[var(--foreground)]"
           >
-            Password
+            {t.auth.password}
           </label>
           <input
             id="password"
             type="password"
             autoComplete="current-password"
-            placeholder="Your password"
+            placeholder={t.auth.passwordPlaceholder}
             className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition placeholder:text-[rgba(184,171,157,0.7)] focus:border-[var(--accent)]"
             {...register('password')}
           />
@@ -200,10 +220,12 @@ export default function LoginPage() {
         {currentUserEmail || currentUserRole ? (
           <div className="rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.04)] px-4 py-4 text-sm text-[var(--foreground)]">
             <p>
-              <strong>Email:</strong> {currentUserEmail || 'No email'}
+              <strong>{t.auth.currentEmail}:</strong>{' '}
+              {currentUserEmail || t.auth.noEmail}
             </p>
             <p>
-              <strong>Role:</strong> {currentUserRole}
+              <strong>{t.auth.currentRole}:</strong>{' '}
+              {getRoleLabel(currentUserRole)}
             </p>
           </div>
         ) : null}
@@ -214,7 +236,7 @@ export default function LoginPage() {
             className="secondary-button mt-2 w-fit"
             onClick={handleLogout}
           >
-            Logout
+            {t.auth.logout}
           </button>
         ) : null}
 
@@ -223,7 +245,7 @@ export default function LoginPage() {
           className="primary-button mt-2 w-fit disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Logging in...' : 'Login'}
+          {isSubmitting ? t.auth.loggingIn : t.auth.login}
         </button>
       </form>
     </section>

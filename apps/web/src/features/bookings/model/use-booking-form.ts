@@ -3,10 +3,11 @@ import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLocale } from '@/shared/i18n/locale-provider';
 
 import { getValidAccessToken } from '@/features/auth/lib/auth-session';
 import {
-  bookingSchema,
+  createBookingSchema,
   getAvailableBookingTimes,
   getInitialBookingValues,
   type BookingFormValues,
@@ -27,6 +28,8 @@ function buildBookingDate(dateValue: string, timeValue: string): Date {
 }
 
 export function useBookingForm() {
+  const { t } = useLocale();
+
   const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const initialValues = getInitialBookingValues();
@@ -40,7 +43,7 @@ export function useBookingForm() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<BookingFormValues>({
-    resolver: zodResolver(bookingSchema),
+    resolver: zodResolver(createBookingSchema(t)),
     defaultValues: {
       tableId: '',
       date: initialValues.date,
@@ -81,7 +84,7 @@ export function useBookingForm() {
       const accessToken = await getValidAccessToken();
 
       if (!accessToken) {
-        setServerError('Session expired. Please log in again.');
+        setServerError(t.bookingForm.sessionExpired);
         return;
       }
 
@@ -101,7 +104,9 @@ export function useBookingForm() {
       );
       await queryClient.invalidateQueries({ queryKey: ['my-bookings'] });
 
-      setSuccessMessage(`Booking created with status ${booking.status}.`);
+      setSuccessMessage(
+        `${t.bookingForm.createdWithStatus} ${t.bookingForm.status[booking.status]}.`,
+      );
 
       const nextInitialValues = getInitialBookingValues();
 
@@ -129,7 +134,7 @@ export function useBookingForm() {
         }
       }
 
-      setServerError('Failed to create booking.');
+      setServerError(t.bookingForm.createFailed);
     }
   };
 

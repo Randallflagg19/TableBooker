@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from '@/shared/i18n/locale-provider';
 import { useBookingForm } from '@/features/bookings/model/use-booking-form';
 import type { RestaurantTable } from '@/shared/api/restaurants';
 
@@ -8,6 +9,8 @@ type BookingFormProps = {
 };
 
 export default function BookingForm({ tables }: BookingFormProps) {
+  const { t } = useLocale();
+
   const {
     register,
     handleSubmit,
@@ -24,11 +27,10 @@ export default function BookingForm({ tables }: BookingFormProps) {
     <div className="mt-10 grid gap-5 rounded-[28px] border border-[var(--border)] bg-[rgba(255,248,240,0.04)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
       <div className="grid gap-2">
         <h2 className="text-2xl font-semibold text-[var(--foreground)]">
-          Create Booking
+          {t.bookingForm.title}
         </h2>
         <p className="text-sm leading-6 text-[var(--muted)]">
-          Choose a table, date, start time, and guest count. Every booking lasts
-          2 hours.
+          {t.bookingForm.description}
         </p>
       </div>
 
@@ -38,14 +40,14 @@ export default function BookingForm({ tables }: BookingFormProps) {
             htmlFor="tableId"
             className="text-sm font-semibold text-[var(--foreground)]"
           >
-            Table
+            {t.bookingForm.table}
           </label>
           <select
             id="tableId"
             className="min-h-12 rounded-2xl border border-[var(--border)] bg-[rgba(255,248,240,0.05)] px-4 text-[var(--foreground)] outline-none transition focus:border-[var(--accent)]"
             {...register('tableId')}
           >
-            <option value="">Choose a table</option>
+            <option value="">{t.bookingForm.chooseTable}</option>
             {tables.map((table) => (
               <option key={table.id} value={table.id}>
                 {table.name} · {table.capacity} guests · {table.kind}
@@ -63,7 +65,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
               htmlFor="date"
               className="text-sm font-semibold text-[var(--foreground)]"
             >
-              Date
+              {t.bookingForm.date}
             </label>
             <input
               id="date"
@@ -82,7 +84,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
               htmlFor="time"
               className="text-sm font-semibold text-[var(--foreground)]"
             >
-              Start Time
+              {t.bookingForm.startTime}
             </label>
             <select
               id="time"
@@ -106,7 +108,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
             htmlFor="guests"
             className="text-sm font-semibold text-[var(--foreground)]"
           >
-            Guests
+            {t.bookingForm.guests}
           </label>
           <input
             id="guests"
@@ -138,7 +140,7 @@ export default function BookingForm({ tables }: BookingFormProps) {
           className="primary-button w-fit disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isSubmitting || availableTimes.length === 0}
         >
-          {isSubmitting ? 'Creating booking...' : 'Create booking'}
+          {isSubmitting ? t.bookingForm.submitting : t.bookingForm.submit}
         </button>
       </form>
     </div>

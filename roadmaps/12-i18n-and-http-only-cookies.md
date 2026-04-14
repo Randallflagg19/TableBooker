@@ -14,7 +14,7 @@
 - понятный language toggle;
 - централизованные UI-тексты;
 - базовую русификацию и англоязычный режим;
-- auth-flow без хранения чувствительных токенов в `localStorage`.
+- auth-flow, в котором `refreshToken` больше не хранится в `localStorage` и уходит в `httpOnly` cookie.
 
 ## Почему это следующий шаг
 
@@ -130,36 +130,39 @@
 
 ### Что делаем
 
-Переводим auth-flow с client-side token storage на `httpOnly` cookie based approach.
+Переводим `refreshToken` flow на `httpOnly` cookie based approach, сохраняя практичный MVP-подход для `accessToken`.
 
 ### Что входит
 
 - backend changes for cookie issuance;
 - refresh flow через cookie, а не через `localStorage`;
 - logout cleanup через cookie invalidation;
-- пересмотр frontend auth helpers.
+- пересмотр frontend auth helpers;
+- сохранение `accessToken` в `localStorage` как короткоживущего client-side токена.
 
 ### Что важно
 
 - это уже касается и backend, и frontend;
 - переход нужно делать аккуратно, чтобы не сломать уже работающий flow;
 - auth UX должен остаться простым для пользователя.
+- не нужно насильно превращать MVP в full-cookie auth, если выбранный компромисс уже даёт понятный и безопасный результат для текущего этапа.
 
 ### Definition of Done
 
 - refresh token больше не хранится в `localStorage`;
-- access / refresh lifecycle работает через cookies;
+- refresh lifecycle работает через `httpOnly` cookie;
+- `accessToken` остаётся в `localStorage` как часть выбранной клиентской session-модели;
 - logout действительно завершает сессию.
 
 ## Step 5. Align Frontend With Cookie-Based Session Model
 
 ### Что делаем
 
-Убираем старые client-side assumptions из frontend кода.
+Убираем старые client-side assumptions из frontend кода и приводим frontend к выбранной гибридной session-модели.
 
 ### Что входит
 
-- removal or simplification of token storage helpers;
+- simplification of token storage helpers;
 - пересмотр `auth-session` logic;
 - обновление protected requests;
 - проверка login / refresh / logout flows в UI.
@@ -167,11 +170,13 @@
 ### Что важно
 
 - не тащить старую и новую модели параллельно слишком долго;
-- желательно получить одну понятную схему auth, а не гибрид.
+- желательно получить одну понятную схему auth, даже если она остаётся гибридной:
+  - `refreshToken` в `httpOnly` cookie
+  - `accessToken` в `localStorage`
 
 ### Definition of Done
 
-- frontend больше не зависит от `localStorage` токенов;
+- frontend использует согласованную session-модель без старых противоречий;
 - авторизация ощущается стабильнее и чище;
 - ручные auth-сценарии проходят без регрессий.
 
@@ -201,3 +206,16 @@
 - документация объясняет новый auth-flow;
 - локализация и cookie auth описаны понятно;
 - следующий вход в проект не требует заново разбираться “как это теперь работает”.
+
+## Фактический результат этапа
+
+Этап завершён в такой практической конфигурации:
+
+- UI получил централизованный словарь `ru / en`;
+- language toggle работает в header;
+- выбор языка сохраняется между обновлениями страницы;
+- основные MVP-экраны локализованы;
+- `refreshToken` вынесен в `httpOnly` cookie;
+- `accessToken` осознанно оставлен в `localStorage`;
+- frontend и backend согласованы с этой session-моделью;
+- документация обновлена под текущее поведение.

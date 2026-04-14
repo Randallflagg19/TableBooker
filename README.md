@@ -82,7 +82,10 @@ Implemented:
   - booking creation
   - my bookings screen
   - confirm / cancel actions
-  - basic refresh-token-based session continuation
+  - `RU / EN` language toggle with persisted locale
+  - centralized UI text dictionary
+  - refresh-token-based session continuation through `httpOnly` cookie
+  - `accessToken` kept in `localStorage` for protected frontend requests
   - dark themed responsive UI
 
 ## Applications
@@ -120,6 +123,13 @@ Auth supports flexible contact input:
 - register with both
 - login by `email`
 - login by `phone`
+
+Current session model:
+
+- `refreshToken` is issued as `httpOnly` cookie
+- `accessToken` is returned to the frontend and stored in `localStorage`
+- `POST /auth/refresh` uses the cookie-based refresh flow
+- logout invalidates the refresh cookie-backed session
 
 ### Booking Service
 
@@ -183,6 +193,7 @@ Responsible for:
 - booking creation flow
 - my bookings flow
 - booking confirm / cancel actions
+- UI localization and language switching
 
 Main frontend routes:
 
@@ -193,17 +204,25 @@ Main frontend routes:
 - `/restaurants/:id`
 - `/bookings`
 
+Frontend UX notes:
+
+- Russian is the default language
+- users can switch between `RU` and `EN`
+- selected language is preserved across page reloads
+
 ## Architecture
 
 ### Core Flow
 
 1. A user registers or logs in through `auth-service`.
-2. The client receives an `accessToken`.
-3. The client sends a booking request to `booking-service`.
-4. `booking-service` validates the current user through `auth-service` over `gRPC`.
-5. A booking is created with status `HOLD`.
-6. Booking status changes can publish domain events to RabbitMQ.
-7. `notification-service` consumes those events and dispatches notifications through available channels.
+2. The frontend receives an `accessToken`, while the `refreshToken` is stored in an `httpOnly` cookie.
+3. The client sends protected requests with the `accessToken`.
+4. When needed, the frontend restores session state through `POST /auth/refresh` using the cookie.
+5. The client sends a booking request to `booking-service`.
+6. `booking-service` validates the current user through `auth-service` over `gRPC`.
+7. A booking is created with status `HOLD`.
+8. Booking status changes can publish domain events to RabbitMQ.
+9. `notification-service` consumes those events and dispatches notifications through available channels.
 
 ### Communication
 
@@ -300,6 +319,12 @@ yarn jest apps/notification-service/src/modules/notifications --runInBand
 
 ```bash
 yarn test:e2e && yarn jest apps/notification-service/src/modules/notifications --runInBand
+```
+
+Frontend production build:
+
+```bash
+yarn build:web
 ```
 
 CI runs on:
@@ -435,6 +460,7 @@ Build individual services:
 ```bash
 yarn build:auth
 yarn build:booking
+yarn build:web
 ```
 
 Start services:
@@ -473,6 +499,7 @@ Project evolution is documented in [roadmaps](./roadmaps):
 - [07-notifications-providers.md](./roadmaps/07-notifications-providers.md)
 - [08-auth-email-or-phone.md](./roadmaps/08-auth-email-or-phone.md)
 - [09-testing-expansion.md](./roadmaps/09-testing-expansion.md)
+- [12-i18n-and-http-only-cookies.md](./roadmaps/12-i18n-and-http-only-cookies.md)
 
 ## What This Project Demonstrates
 
@@ -497,6 +524,7 @@ At this point the project already supports:
 - authenticated flows through the frontend UI
 - booking creation and management through the frontend UI
 - restaurant browsing through the frontend UI
+- localized `RU / EN` frontend flows
 - backend integration through Swagger and direct service endpoints
 - a full MVP flow from register to booking confirmation
 
@@ -505,4 +533,4 @@ Likely next improvements:
 - automated frontend tests
 - deployment setup for both backend and frontend
 - UX polish and consistency cleanup
-- stronger auth handling with `httpOnly` cookies if desired
+- deeper server-side localization of backend error messages if desired

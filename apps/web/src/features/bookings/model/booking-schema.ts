@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { messages, type Locale } from '@/shared/i18n/messages';
+
 export const BOOKING_TIME_OPTIONS = [
   '10:00',
   '11:00',
@@ -70,38 +72,40 @@ export function getInitialBookingValues() {
   };
 }
 
-export const bookingSchema = z
-  .object({
-    tableId: z.uuid('Please choose a table'),
-    date: z.string().min(1, 'Date is required'),
-    time: z.enum(BOOKING_TIME_OPTIONS, {
-      message: 'Please choose a start time',
-    }),
-    guests: z
-      .number()
-      .int('Guests must be a whole number')
-      .min(1, 'Guests must be at least 1'),
-  })
-  .superRefine((data, ctx) => {
-    const startAt = buildLocalStartAt(data.date, data.time);
+export function createBookingSchema(t: (typeof messages)[Locale]) {
+  return z
+    .object({
+      tableId: z.uuid(t.bookingForm.validation.chooseTable),
+      date: z.string().min(1, t.bookingForm.validation.dateRequired),
+      time: z.enum(BOOKING_TIME_OPTIONS, {
+        message: t.bookingForm.validation.chooseStartTime,
+      }),
+      guests: z
+        .number()
+        .int(t.bookingForm.validation.guestsWholeNumber)
+        .min(1, t.bookingForm.validation.guestsMin),
+    })
+    .superRefine((data, ctx) => {
+      const startAt = buildLocalStartAt(data.date, data.time);
 
-    if (!startAt || Number.isNaN(startAt.getTime())) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Please choose a valid date and time',
-        path: ['date'],
-      });
-      return;
-    }
+      if (!startAt || Number.isNaN(startAt.getTime())) {
+        ctx.addIssue({
+          code: 'custom',
+          message: t.bookingForm.validation.validDateTime,
+          path: ['date'],
+        });
+        return;
+      }
 
-    if (startAt <= new Date()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Booking time must be in the future',
-        path: ['time'],
-      });
-    }
-  });
+      if (startAt <= new Date()) {
+        ctx.addIssue({
+          code: 'custom',
+          message: t.bookingForm.validation.futureTime,
+          path: ['time'],
+        });
+      }
+    });
+}
 
-export type BookingFormValues = z.infer<typeof bookingSchema>;
+export type BookingFormValues = z.infer<ReturnType<typeof createBookingSchema>>;
 export type BookingTimeOption = (typeof BOOKING_TIME_OPTIONS)[number];

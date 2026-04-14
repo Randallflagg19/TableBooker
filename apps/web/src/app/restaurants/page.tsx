@@ -1,11 +1,14 @@
 'use client';
 
+import { useLocale } from '@/shared/i18n/locale-provider';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
 import { getRestaurants } from '@/shared/api/restaurants';
 
 export default function RestaurantsPage() {
+  const { t } = useLocale();
+
   const {
     data: restaurants,
     isLoading,
@@ -18,9 +21,9 @@ export default function RestaurantsPage() {
   if (isLoading && !restaurants) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Browse</p>
-        <h1 className="section-title">Restaurants</h1>
-        <p className="section-text">Loading restaurants...</p>
+        <p className="eyebrow">{t.restaurants.eyebrow}</p>
+        <h1 className="section-title">{t.restaurants.title}</h1>
+        <p className="section-text">{t.restaurants.loading}</p>
       </section>
     );
   }
@@ -28,10 +31,10 @@ export default function RestaurantsPage() {
   if (isError && !restaurants) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Browse</p>
-        <h1 className="section-title">Restaurants</h1>
+        <p className="eyebrow">{t.restaurants.eyebrow}</p>
+        <h1 className="section-title">{t.restaurants.title}</h1>
         <p className="rounded-2xl border border-[rgba(201,107,99,0.28)] bg-[rgba(201,107,99,0.14)] px-4 py-3 text-sm text-[#f2c0b8]">
-          Failed to load restaurants.
+          {t.restaurants.failed}
         </p>
       </section>
     );
@@ -40,20 +43,18 @@ export default function RestaurantsPage() {
   if (!restaurants || restaurants.length === 0) {
     return (
       <section className="content-panel">
-        <p className="eyebrow">Browse</p>
-        <h1 className="section-title">Restaurants</h1>
-        <p className="section-text">No restaurants available right now.</p>
+        <p className="eyebrow">{t.restaurants.eyebrow}</p>
+        <h1 className="section-title">{t.restaurants.title}</h1>
+        <p className="section-text">{t.restaurants.empty}</p>
       </section>
     );
   }
 
   return (
     <section className="content-panel">
-      <p className="eyebrow">Browse</p>
-      <h1 className="section-title">Restaurants</h1>
-      <p className="section-text">
-        Choose a restaurant to view its details and available tables.
-      </p>
+      <p className="eyebrow">{t.restaurants.eyebrow}</p>
+      <h1 className="section-title">{t.restaurants.title}</h1>
+      <p className="section-text">{t.restaurants.description}</p>
 
       <div className="mt-6 grid gap-4">
         {restaurants.map((restaurant) => (
@@ -76,7 +77,7 @@ export default function RestaurantsPage() {
                   href={`/restaurants/${restaurant.id}`}
                   className="secondary-button"
                 >
-                  Open restaurant
+                  {t.restaurants.openRestaurant}
                 </Link>
               </div>
             </div>
