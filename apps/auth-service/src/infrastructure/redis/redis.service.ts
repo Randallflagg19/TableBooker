@@ -19,11 +19,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.client = redisUrl
       ? createClient({
           url: redisUrl,
+          socket: {
+            reconnectStrategy: false,
+            connectTimeout: 5000,
+          },
         })
       : createClient({
           socket: {
             host: this.configService.getOrThrow<string>('REDIS_HOST'),
             port: Number(this.configService.getOrThrow<string>('REDIS_PORT')),
+            reconnectStrategy: false,
+            connectTimeout: 5000,
           },
         });
 
