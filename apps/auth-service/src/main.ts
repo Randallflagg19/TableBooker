@@ -22,14 +22,17 @@ async function bootstrap() {
     }),
   );
 
+  const frontendAppUrl =
+    process.env.FRONTEND_APP_URL ?? 'http://localhost:3000';
+
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: frontendAppUrl,
     credentials: true,
   });
 
   const grpcHost = process.env.AUTH_SERVICE_GRPC_HOST ?? '0.0.0.0';
   const grpcPort = process.env.AUTH_SERVICE_GRPC_PORT ?? '50051';
-  const httpPort = process.env.AUTH_SERVICE_PORT ?? 3001;
+  const httpPort = process.env.PORT ?? process.env.AUTH_SERVICE_PORT ?? 3001;
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
