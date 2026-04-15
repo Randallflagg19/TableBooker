@@ -31,7 +31,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "NODE_ENV=test jest --config ./test/jest-e2e.json",
     "start:auth:prod": "node dist/apps/auth-service/main",
-    "start:booking:prod": "node dist/apps/booking-service/main"
+    "start:booking:prod": "node dist/apps/booking-service/apps/booking-service/src/main.js"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
