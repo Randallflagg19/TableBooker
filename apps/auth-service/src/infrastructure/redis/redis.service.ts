@@ -11,17 +11,21 @@ import { RedisClientType, createClient } from 'redis';
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
   private client: RedisClientType;
+  private isAvailable = false;
 
   public constructor(private readonly configService: ConfigService) {
-    const host = this.configService.getOrThrow<string>('REDIS_HOST');
-    const port = Number(this.configService.getOrThrow<string>('REDIS_PORT'));
+    const redisUrl = this.configService.get<string>('REDIS_URL');
 
-    this.client = createClient({
-      socket: {
-        host,
-        port,
-      },
-    });
+    this.client = redisUrl
+      ? createClient({
+          url: redisUrl,
+        })
+      : createClient({
+          socket: {
+            host: this.configService.getOrThrow<string>('REDIS_HOST'),
+            port: Number(this.configService.getOrThrow<string>('REDIS_PORT')),
+          },
+        });
 
     this.client.on('error', (error: unknown) => {
       const message =
@@ -32,15 +36,32 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   public async onModuleInit() {
-    await this.client.connect();
-    this.logger.log('Redis connected');
+    try {
+      await this.client.connect();
+      this.isAvailable = true;
+      this.logger.log('Redis connected');
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unknown Redis connection error';
+
+      this.logger.warn(`Redis unavailable, continuing without it: ${message}`);
+      this.isAvailable = false;
+    }
   }
 
   public async onModuleDestroy() {
-    await this.client.quit();
+    if (this.isAvailable) {
+      await this.client.quit();
+    }
   }
 
   public async increment(key: string, ttlSeconds: number): Promise<number> {
+    if (!this.isAvailable) {
+      return 1;
+    }
+
     const value = await this.client.incr(key);
 
     if (value === 1) {
@@ -51,6 +72,10 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   public async del(key: string): Promise<void> {
+    if (!this.isAvailable) {
+      return;
+    }
+
     await this.client.del(key);
   }
 }

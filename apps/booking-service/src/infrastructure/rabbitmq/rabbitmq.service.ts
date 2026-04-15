@@ -16,10 +16,14 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
   public constructor(private readonly configService: ConfigService) {}
 
   public async onModuleInit() {
-    const host = this.configService.getOrThrow<string>('RABBITMQ_HOST');
-    const port = this.configService.getOrThrow<string>('RABBITMQ_PORT');
+    const rabbitMqUrl = this.configService.get<string>('RABBITMQ_URL');
 
-    this.connection = await amqp.connect(`amqp://${host}:${port}`);
+    this.connection = rabbitMqUrl
+      ? await amqp.connect(rabbitMqUrl)
+      : await amqp.connect(
+          `amqp://${this.configService.getOrThrow<string>('RABBITMQ_HOST')}:${this.configService.getOrThrow<string>('RABBITMQ_PORT')}`,
+        );
+
     this.channel = await this.connection.createChannel();
 
     this.logger.log('RabbitMQ connected');

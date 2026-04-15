@@ -17,17 +17,32 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { CurrentUserData } from '../infrastructure/jwt-payload.type';
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
-import type { Request, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 
 const REFRESH_COOKIE_NAME = 'tablebooker_refresh_token';
 
-const REFRESH_COOKIE_OPTIONS = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: false,
-  path: '/auth',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-};
+function getRefreshCookieOptions(): CookieOptions {
+  const sameSite = process.env.AUTH_COOKIE_SAME_SITE;
+  const secure = process.env.AUTH_COOKIE_SECURE === 'true';
+  const domain = process.env.AUTH_COOKIE_DOMAIN;
+
+  const cookieOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite:
+      sameSite === 'strict' || sameSite === 'none' || sameSite === 'lax'
+        ? sameSite
+        : 'lax',
+    secure,
+    path: '/auth',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  if (domain) {
+    cookieOptions.domain = domain;
+  }
+
+  return cookieOptions;
+}
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -56,7 +71,7 @@ export class AuthController {
     res.cookie(
       REFRESH_COOKIE_NAME,
       result.refreshToken,
-      REFRESH_COOKIE_OPTIONS,
+      getRefreshCookieOptions(),
     );
 
     return {
@@ -85,7 +100,7 @@ export class AuthController {
     @CurrentUser() user: CurrentUserData,
     @Res({ passthrough: true }) res: Response,
   ) {
-    res.clearCookie(REFRESH_COOKIE_NAME, REFRESH_COOKIE_OPTIONS);
+    res.clearCookie(REFRESH_COOKIE_NAME, getRefreshCookieOptions());
 
     return this.authService.logout(user.id);
   }
