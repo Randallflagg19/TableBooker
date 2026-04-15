@@ -15,7 +15,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const httpPort = process.env.BOOKING_SERVICE_PORT ?? 3002;
+  const httpPort = process.env.PORT ?? process.env.BOOKING_SERVICE_PORT ?? 3002;
 
   app.useGlobalPipes(
     new ValidationPipe({
