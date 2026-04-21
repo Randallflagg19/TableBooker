@@ -1,5 +1,4 @@
 'use client';
-import Link from 'next/link';
 import { useLocale } from '@/shared/i18n/locale-provider';
 
 export default function Home() {
@@ -13,15 +12,15 @@ export default function Home() {
       </div>
 
       <div className="hero-actions">
-        <Link href="/restaurants" className="primary-button">
+        <a href="/restaurants" className="primary-button">
           {t.home.exploreRestaurants}
-        </Link>
-        <Link href="/bookings" className="secondary-button">
+        </a>
+        <a href="/bookings" className="secondary-button">
           {t.home.myBookings}
-        </Link>
-        <Link href="/login" className="ghost-link">
+        </a>
+        <a href="/login" className="ghost-link">
           {t.home.loginOrRegister}
-        </Link>
+        </a>
       </div>
     </section>
   );

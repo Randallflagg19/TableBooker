@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import { cookies } from 'next/headers';
 
 import './globals.css';
@@ -33,9 +32,9 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           <div className="app-shell">
             <header className="site-header">
               <div className="page-container site-header-inner">
-                <Link href="/" className="brand">
+                <a href="/" className="brand">
                   TableBooker
-                </Link>
+                </a>
                 <SiteHeaderNav />
               </div>
             </header>

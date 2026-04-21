@@ -1,7 +1,6 @@
 'use client';
 
 import { useLocale } from '@/shared/i18n/locale-provider';
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 
 import { getRestaurants } from '@/shared/api/restaurants';
@@ -73,12 +72,12 @@ export default function RestaurantsPage() {
               </div>
 
               <div>
-                <Link
+                <a
                   href={`/restaurants/${restaurant.id}`}
                   className="secondary-button"
                 >
                   {t.restaurants.openRestaurant}
-                </Link>
+                </a>
               </div>
             </div>
           </article>
