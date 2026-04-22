@@ -1,6 +1,47 @@
 # TableBooker
 
-TableBooker is a production-like backend system for restaurant table booking.
+Fullstack приложение для бронирования ресторанов с микросервисной архитектурой
+
+## 🚀 Демо
+👉 https://table-booker.ru/
+
+## 🖼 Интерфейс
+
+![App Screenshot](./docs/screenshot.png)
+
+Тестовый сценарий:
+- зарегистрируйтесь
+- создайте бронь
+- подтвердите / отмените
+- проверьте авто-истечение
+
+## 🔥 Ключевые возможности
+- авторизация (JWT + HttpOnly cookie)
+- полный цикл бронирования (create / confirm / cancel)
+- авто-истечение броней (TTL)
+- кеширование и rate limit (Redis)
+- микросервисная архитектура (auth / booking / notification)
+- взаимодействие через gRPC и RabbitMQ
+
+## 🧠 Что здесь важно
+Этот проект демонстрирует не просто CRUD, а:
+- разделение на сервисы
+- синхронное и асинхронное взаимодействие
+- устойчивость системы при частичных сбоях
+- работу с реальными сценариями (бронь, конфликт времени)
+
+## 🛠 Стек
+Next.js, NestJS, PostgreSQL, Redis, RabbitMQ, gRPC, Docker
+
+<details>
+<summary>📚 Полное техническое описание</summary>
+
+# TableBooker
+
+Fullstack приложение для бронирования ресторанов, построенное как микросервисная система с gRPC и event-driven архитектурой.
+
+Проект демонстрирует не просто CRUD, а реальный production-подход:
+разделение сервисов, асинхронные события, отказоустойчивость и полноценный пользовательский flow.
 
 It is designed to demonstrate how a real-world backend evolves from a simple modular monolith into a microservice architecture with:
 
@@ -575,3 +616,6 @@ Likely next improvements:
 - deployment setup for both backend and frontend
 - UX polish and consistency cleanup
 - deeper server-side localization of backend error messages if desired
+
+
+</details>
