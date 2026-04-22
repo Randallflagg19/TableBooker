@@ -1,49 +1,52 @@
 # TableBooker
 
-Fullstack приложение для бронирования ресторанов с микросервисной архитектурой
+Fullstack restaurant booking platform built with a microservice architecture (gRPC + event-driven).
 
-## 🚀 Демо
+## 🚀 Demo
 👉 https://table-booker.ru/
 
-## 🖼 Интерфейс
+## 🖼 Interface
 
-![App Screenshot](./docs/screenshot.png)
+### Landing
+![Home](./docs/home-en.png)
 
-Тестовый сценарий:
-- зарегистрируйтесь
-- создайте бронь
-- подтвердите / отмените
-- проверьте авто-истечение
+### Core flow (EN)
+![Login](./docs/login-en.png)
+![My bookings](./docs/bookings-en.png)
 
-## 🔥 Ключевые возможности
-- авторизация (JWT + HttpOnly cookie)
-- полный цикл бронирования (create / confirm / cancel)
-- авто-истечение броней (TTL)
-- кеширование и rate limit (Redis)
-- микросервисная архитектура (auth / booking / notification)
-- взаимодействие через gRPC и RabbitMQ
+### Russian (i18n support)
+![Главная](./docs/home-ru.png)
 
-## 🧠 Что здесь важно
-Этот проект демонстрирует не просто CRUD, а:
-- разделение на сервисы
-- синхронное и асинхронное взаимодействие
-- устойчивость системы при частичных сбоях
-- работу с реальными сценариями (бронь, конфликт времени)
+## 🔥 Key Features
 
-## 🛠 Стек
-Next.js, NestJS, PostgreSQL, Redis, RabbitMQ, gRPC, Docker
+- JWT authentication (HttpOnly cookies)
+- Full booking lifecycle (create / confirm / cancel)
+- Booking expiration (TTL)
+- Redis caching & rate limiting
+- Microservices (auth / booking / notification)
+- gRPC + RabbitMQ communication
+
+## 🧠 Why this project matters
+
+This is not just CRUD. It demonstrates:
+
+- service separation
+- sync + async communication
+- failure-tolerant design
+- real booking domain logic (conflicts, expiration)
+
+## 🛠 Tech Stack
+
+Next.js · NestJS · PostgreSQL · Redis · RabbitMQ · gRPC · Docker
 
 <details>
-<summary>📚 Полное техническое описание</summary>
+<summary>📚 Full technical description</summary>
 
-# TableBooker
+## Overview
 
-Fullstack приложение для бронирования ресторанов, построенное как микросервисная система с gRPC и event-driven архитектурой.
+TableBooker is a fullstack restaurant booking platform built as a microservice system.
 
-Проект демонстрирует не просто CRUD, а реальный production-подход:
-разделение сервисов, асинхронные события, отказоустойчивость и полноценный пользовательский flow.
-
-It is designed to demonstrate how a real-world backend evolves from a simple modular monolith into a microservice architecture with:
+It demonstrates how a real-world backend can evolve from a simple modular application into a more production-like architecture with:
 
 - synchronous communication via gRPC
 - asynchronous event-driven flows via RabbitMQ
@@ -51,7 +54,7 @@ It is designed to demonstrate how a real-world backend evolves from a simple mod
 - resilient notification delivery (email + SMS)
 - meaningful automated test coverage
 
-The focus of this project is not on CRUD, but on **architecture, reliability, and evolution of a system over time**.
+The focus of this project is not on CRUD, but on **architecture, reliability, and system evolution over time**.
 
 ## Why This Project Matters
 
@@ -63,7 +66,7 @@ This project showcases:
 - how to implement real-world auth flows (access + refresh tokens, logout invalidation)
 - how to move from manual testing to structured automated tests
 
-It reflects real backend engineering challenges rather than isolated features.
+It reflects backend engineering challenges rather than isolated toy features.
 
 ## What I Learned
 
@@ -354,268 +357,3 @@ Useful backend commands:
 
 ```bash
 yarn test:e2e
-```
-
-```bash
-yarn jest apps/notification-service/src/modules/notifications --runInBand
-```
-
-### Frontend Coverage
-
-Frontend tests live in `apps/web` and use:
-
-- `Vitest`
-- `Testing Library`
-- `jsdom`
-
-Current frontend coverage includes:
-
-- auth schema validation
-- booking schema and booking helper logic
-- locale persistence utilities
-- login page behavior
-- register page behavior
-- booking form behavior
-- locale switching in the header
-
-Useful frontend commands:
-
-```bash
-yarn test:web
-```
-
-```bash
-yarn test:web:watch
-```
-
-```bash
-yarn --cwd apps/web test
-```
-
-The frontend suite is intentionally compact. It focuses on the most important UI flows and the bugs that already appeared during development, instead of trying to maximize raw coverage numbers.
-
-Frontend production build:
-
-```bash
-yarn build:web
-```
-
-CI runs on:
-
-- `push`
-- `pull_request`
-
-and verifies:
-
-- frontend tests in `apps/web`
-- backend e2e tests
-- notification service specs
-
-## Local Run
-
-### 1. Start infrastructure
-
-```bash
-docker compose up -d
-```
-
-This starts:
-
-- PostgreSQL
-- Redis
-- RabbitMQ
-
-### 2. Install dependencies
-
-```bash
-yarn install
-```
-
-### 3. Start services
-
-Auth service:
-
-```bash
-yarn start:auth:dev
-```
-
-Booking service:
-
-```bash
-yarn start:booking:dev
-```
-
-Notification service:
-
-```bash
-yarn start:notification:dev
-```
-
-Frontend app:
-
-```bash
-yarn start:web:dev
-```
-
-Then open:
-
-- [http://localhost:3000](http://localhost:3000)
-
-## Ports
-
-- `auth-service` HTTP: `3001`
-- `auth-service` gRPC: `50051`
-- `booking-service` HTTP: `3002`
-- `notification-service` HTTP: `3003`
-- PostgreSQL: `5434`
-- Redis: `6379`
-- RabbitMQ: `5672`
-- RabbitMQ management: `15672`
-
-## Swagger
-
-- Auth docs: [http://localhost:3001/docs](http://localhost:3001/docs)
-- Booking docs: [http://localhost:3002/docs](http://localhost:3002/docs)
-
-Notes:
-
-- log in through `auth-service` first
-- take the returned `accessToken`
-- use Swagger `Authorize` to send it to protected endpoints
-- `GET /auth/me` and booking endpoints require a valid bearer token
-
-## Environment
-
-Main environment variables:
-
-```env
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5434
-POSTGRES_DB=tablebooker
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-
-JWT_ACCESS_SECRET=your_access_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-
-AUTH_SERVICE_PORT=3001
-AUTH_SERVICE_GRPC_HOST=0.0.0.0
-AUTH_SERVICE_GRPC_PORT=50051
-
-BOOKING_SERVICE_PORT=3002
-NOTIFICATION_SERVICE_PORT=3003
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-RABBITMQ_HOST=localhost
-RABBITMQ_PORT=5672
-RABBITMQ_MANAGEMENT_PORT=15672
-```
-
-For tests, the project uses a dedicated test environment.
-
-## Useful Commands
-
-Install dependencies:
-
-```bash
-yarn install
-```
-
-Build:
-
-```bash
-yarn build
-```
-
-Build individual services:
-
-```bash
-yarn build:auth
-yarn build:booking
-yarn build:web
-```
-
-Start services:
-
-```bash
-yarn start:auth
-yarn start:booking
-yarn start:notification
-```
-
-Start in watch mode:
-
-```bash
-yarn start:auth:dev
-yarn start:booking:dev
-yarn start:notification:dev
-yarn start:web:dev
-```
-
-Lint:
-
-```bash
-yarn lint
-```
-
-Frontend tests:
-
-```bash
-yarn test:web
-yarn test:web:watch
-```
-
-## Roadmaps
-
-Project evolution is documented in [roadmaps](./roadmaps):
-
-- [01-backend.md](./roadmaps/01-backend.md)
-- [02-auth.md](./roadmaps/02-auth.md)
-- [03-grpc-migration.md](./roadmaps/03-grpc-migration.md)
-- [04-redis.md](./roadmaps/04-redis.md)
-- [05-testing.md](./roadmaps/05-testing.md)
-- [06-notifications-rabbitmq.md](./roadmaps/06-notifications-rabbitmq.md)
-- [07-notifications-providers.md](./roadmaps/07-notifications-providers.md)
-- [08-auth-email-or-phone.md](./roadmaps/08-auth-email-or-phone.md)
-- [09-testing-expansion.md](./roadmaps/09-testing-expansion.md)
-- [11-frontend-testing.md](./roadmaps/11-frontend-testing.md)
-- [12-i18n-and-http-only-cookies.md](./roadmaps/12-i18n-and-http-only-cookies.md)
-
-## What This Project Demonstrates
-
-This project is meant to show:
-
-- practical NestJS backend work beyond simple controllers
-- building a complete frontend MVP on top of an already-evolving backend
-- SQL-first backend development without hiding everything behind an ORM
-- service boundaries and gradual architecture growth
-- `gRPC` and event-driven integration
-- caching and rate limiting
-- auth and booking business logic
-- frontend integration with real auth and booking flows
-- test-driven stabilization of a non-trivial backend
-
-## What Comes Next
-
-The next natural stage is deeper product hardening and deployment work.
-
-At this point the project already supports:
-
-- authenticated flows through the frontend UI
-- booking creation and management through the frontend UI
-- restaurant browsing through the frontend UI
-- localized `RU / EN` frontend flows
-- backend integration through Swagger and direct service endpoints
-- a full MVP flow from register to booking confirmation
-
-Likely next improvements:
-
-- automated frontend tests
-- deployment setup for both backend and frontend
-- UX polish and consistency cleanup
-- deeper server-side localization of backend error messages if desired
-
-
-</details>
