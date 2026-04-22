@@ -7,15 +7,15 @@ Fullstack restaurant booking platform built with a microservice architecture (gR
 
 ## 🖼 Interface
 
-### Landing
-<img src="./docs/home-en.png" width="800"/>
+### Landing (EN)
+![Home](./docs/home-en.png)
 
-### Core flow (RU)
+### User flow (EN)
 ![Login](./docs/login-en.png)
 ![My bookings](./docs/bookings-en.png)
 
-### Russian (i18n support)
-![Главная](./docs/home-ru.png)
+### Russian (i18n)
+![Home RU](./docs/home-ru.png)
 
 ## 🔥 Key Features
 
