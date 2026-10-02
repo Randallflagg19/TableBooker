@@ -32,6 +32,7 @@ async function bootstrap() {
 
   const grpcHost = process.env.AUTH_SERVICE_GRPC_HOST ?? '0.0.0.0';
   const grpcPort = process.env.AUTH_SERVICE_GRPC_PORT ?? '50051';
+  const httpHost = process.env.AUTH_SERVICE_HOST ?? '0.0.0.0';
   const httpPort = Number(
     process.env.PORT ?? process.env.AUTH_SERVICE_PORT ?? '3001',
   );
@@ -57,6 +58,6 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   await app.startAllMicroservices();
-  await app.listen(httpPort);
+  await app.listen(httpPort, httpHost);
 }
 void bootstrap();

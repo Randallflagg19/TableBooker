@@ -15,6 +15,7 @@ async function bootstrap() {
     credentials: true,
   });
 
+  const httpHost = process.env.BOOKING_SERVICE_HOST ?? '0.0.0.0';
   const httpPort = Number(
     process.env.PORT ?? process.env.BOOKING_SERVICE_PORT ?? '3002',
   );
@@ -38,6 +39,6 @@ async function bootstrap() {
 
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(httpPort);
+  await app.listen(httpPort, httpHost);
 }
 void bootstrap();
