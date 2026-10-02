@@ -32,7 +32,9 @@ async function bootstrap() {
 
   const grpcHost = process.env.AUTH_SERVICE_GRPC_HOST ?? '0.0.0.0';
   const grpcPort = process.env.AUTH_SERVICE_GRPC_PORT ?? '50051';
-  const httpPort = process.env.PORT ?? process.env.AUTH_SERVICE_PORT ?? 3001;
+  const httpPort = Number(
+    process.env.PORT ?? process.env.AUTH_SERVICE_PORT ?? '3001',
+  );
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,

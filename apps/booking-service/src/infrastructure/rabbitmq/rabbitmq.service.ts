@@ -17,16 +17,26 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
 
   public async onModuleInit() {
     const rabbitMqUrl = this.configService.get<string>('RABBITMQ_URL');
+    const connectionTarget = rabbitMqUrl
+      ? rabbitMqUrl
+      : `amqp://${this.configService.getOrThrow<string>('RABBITMQ_HOST')}:${this.configService.getOrThrow<string>('RABBITMQ_PORT')}`;
 
-    this.connection = rabbitMqUrl
-      ? await amqp.connect(rabbitMqUrl)
-      : await amqp.connect(
-          `amqp://${this.configService.getOrThrow<string>('RABBITMQ_HOST')}:${this.configService.getOrThrow<string>('RABBITMQ_PORT')}`,
-        );
+    try {
+      this.connection = await amqp.connect(connectionTarget);
+      this.attachConnectionHandlers(this.connection);
 
-    this.channel = await this.connection.createChannel();
+      this.channel = await this.connection.createChannel();
+      this.attachChannelHandlers(this.channel);
 
-    this.logger.log('RabbitMQ connected');
+      this.logger.log('RabbitMQ connected');
+    } catch (error) {
+      this.connection = null;
+      this.channel = null;
+      this.logger.error(
+        'RabbitMQ connection failed. Booking service will continue without event publishing.',
+      );
+      this.logger.error(error instanceof Error ? error.message : String(error));
+    }
   }
 
   public async onModuleDestroy() {
@@ -45,7 +55,10 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
     payload: unknown,
   ): Promise<void> {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel is not initialized');
+      this.logger.warn(
+        `RabbitMQ channel is not initialized. Skipping publish for ${routingKey}.`,
+      );
+      return;
     }
 
     await this.channel.assertExchange(exchange, 'topic', {
@@ -60,5 +73,32 @@ export class RabbitMqService implements OnModuleInit, OnModuleDestroy {
         persistent: true,
       },
     );
+  }
+
+  private attachConnectionHandlers(connection: ChannelModel) {
+    connection.on('error', (error) => {
+      this.logger.error(
+        `RabbitMQ connection error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+
+    connection.on('close', () => {
+      this.logger.warn('RabbitMQ connection closed');
+      this.connection = null;
+      this.channel = null;
+    });
+  }
+
+  private attachChannelHandlers(channel: Channel) {
+    channel.on('error', (error) => {
+      this.logger.error(
+        `RabbitMQ channel error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+
+    channel.on('close', () => {
+      this.logger.warn('RabbitMQ channel closed');
+      this.channel = null;
+    });
   }
 }

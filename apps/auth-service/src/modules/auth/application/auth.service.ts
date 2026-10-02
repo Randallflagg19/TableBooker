@@ -1,6 +1,8 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DbService } from '../../../infrastructure/db/db.service';
@@ -27,6 +29,9 @@ export type AuthResponse = AuthTokens & {
 
 @Injectable()
 export class AuthService {
+  private static readonly OPERATION_TIMEOUT_MS = 5000;
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly db: DbService,
     private readonly jwtService: JwtService,
@@ -64,11 +69,14 @@ export class AuthService {
 
   public async register(dto: RegisterDto): Promise<PublicUser> {
     if (dto.email) {
-      const [existingUserByEmail] = await this.db.client<User[]>`
-        SELECT *
-        FROM users
-        WHERE email = ${dto.email}
-      `;
+      const [existingUserByEmail] = await this.withTimeout(
+        this.db.client<User[]>`
+          SELECT *
+          FROM users
+          WHERE email = ${dto.email}
+        `,
+        'register:select-user-by-email',
+      );
 
       if (existingUserByEmail) {
         throw new ConflictException('User with this email already exists');
@@ -76,24 +84,33 @@ export class AuthService {
     }
 
     if (dto.phone) {
-      const [existingUserByPhone] = await this.db.client<User[]>`
-        SELECT *
-        FROM users
-        WHERE phone = ${dto.phone}
-      `;
+      const [existingUserByPhone] = await this.withTimeout(
+        this.db.client<User[]>`
+          SELECT *
+          FROM users
+          WHERE phone = ${dto.phone}
+        `,
+        'register:select-user-by-phone',
+      );
 
       if (existingUserByPhone) {
         throw new ConflictException('User with this phone already exists');
       }
     }
 
-    const passwordHash = await argon2.hash(dto.password);
+    const passwordHash = await this.withTimeout(
+      argon2.hash(dto.password),
+      'register:argon2-hash-password',
+    );
 
-    const [user] = await this.db.client<User[]>`
-      INSERT INTO users (email, phone, password_hash)
-      VALUES (${dto.email ?? null}, ${dto.phone ?? null}, ${passwordHash})
-      RETURNING *
-    `;
+    const [user] = await this.withTimeout(
+      this.db.client<User[]>`
+        INSERT INTO users (email, phone, password_hash)
+        VALUES (${dto.email ?? null}, ${dto.phone ?? null}, ${passwordHash})
+        RETURNING *
+      `,
+      'register:insert-user',
+    );
 
     return {
       id: user.id,
@@ -109,26 +126,32 @@ export class AuthService {
     let user: User | undefined;
 
     if (dto.email) {
-      [user] = await this.db.client<User[]>`
-        SELECT *
-        FROM users
-        WHERE email = ${dto.email}
-      `;
+      [user] = await this.withTimeout(
+        this.db.client<User[]>`
+          SELECT *
+          FROM users
+          WHERE email = ${dto.email}
+        `,
+        'login:select-user-by-email',
+      );
     } else if (dto.phone) {
-      [user] = await this.db.client<User[]>`
-        SELECT *
-        FROM users
-        WHERE phone = ${dto.phone}
-      `;
+      [user] = await this.withTimeout(
+        this.db.client<User[]>`
+          SELECT *
+          FROM users
+          WHERE phone = ${dto.phone}
+        `,
+        'login:select-user-by-phone',
+      );
     }
 
     if (!user || !user.password_hash) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await argon2.verify(
-      user.password_hash,
-      dto.password,
+    const isPasswordValid = await this.withTimeout(
+      argon2.verify(user.password_hash, dto.password),
+      'login:argon2-verify-password',
     );
 
     if (!isPasswordValid) {
@@ -147,24 +170,36 @@ export class AuthService {
     const refreshSecret =
       this.configService.getOrThrow<string>('JWT_REFRESH_SECRET');
 
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: accessSecret,
-      expiresIn: 15 * 60,
-    });
+    const accessToken = await this.withTimeout(
+      this.jwtService.signAsync(payload, {
+        secret: accessSecret,
+        expiresIn: 15 * 60,
+      }),
+      'login:sign-access-token',
+    );
 
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: refreshSecret,
-      expiresIn: 7 * 24 * 60 * 60,
-    });
+    const refreshToken = await this.withTimeout(
+      this.jwtService.signAsync(payload, {
+        secret: refreshSecret,
+        expiresIn: 7 * 24 * 60 * 60,
+      }),
+      'login:sign-refresh-token',
+    );
 
-    const refreshTokenHash = await argon2.hash(refreshToken);
+    const refreshTokenHash = await this.withTimeout(
+      argon2.hash(refreshToken),
+      'login:argon2-hash-refresh-token',
+    );
 
-    await this.db.client`
-      UPDATE users
-      SET refresh_token_hash = ${refreshTokenHash},
-          updated_at = now()
-      WHERE id = ${user.id}
-    `;
+    await this.withTimeout(
+      this.db.client`
+        UPDATE users
+        SET refresh_token_hash = ${refreshTokenHash},
+            updated_at = now()
+        WHERE id = ${user.id}
+      `,
+      'login:update-refresh-token-hash',
+    );
 
     return {
       accessToken,
@@ -194,19 +229,22 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const [user] = await this.db.client<User[]>`
-      SELECT *
-      FROM users
-      WHERE id = ${payload.sub}
-    `;
+    const [user] = await this.withTimeout(
+      this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE id = ${payload.sub}
+      `,
+      'refresh:select-user-by-id',
+    );
 
     if (!user || !user.refresh_token_hash) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const isRefreshTokenValid = await argon2.verify(
-      user.refresh_token_hash,
-      refreshToken,
+    const isRefreshTokenValid = await this.withTimeout(
+      argon2.verify(user.refresh_token_hash, refreshToken),
+      'refresh:argon2-verify-refresh-token',
     );
 
     if (!isRefreshTokenValid) {
@@ -216,17 +254,20 @@ export class AuthService {
     const accessSecret =
       this.configService.getOrThrow<string>('JWT_ACCESS_SECRET');
 
-    const newAccessToken = await this.jwtService.signAsync(
-      {
-        sub: user.id,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-      },
-      {
-        secret: accessSecret,
-        expiresIn: 15 * 60,
-      },
+    const newAccessToken = await this.withTimeout(
+      this.jwtService.signAsync(
+        {
+          sub: user.id,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+        },
+        {
+          secret: accessSecret,
+          expiresIn: 15 * 60,
+        },
+      ),
+      'refresh:sign-access-token',
     );
 
     return {
@@ -235,12 +276,15 @@ export class AuthService {
   }
 
   public async logout(userId: string): Promise<{ message: string }> {
-    await this.db.client`
-      UPDATE users
-      SET refresh_token_hash = NULL,
-          updated_at = now()
-      WHERE id = ${userId}
-    `;
+    await this.withTimeout(
+      this.db.client`
+        UPDATE users
+        SET refresh_token_hash = NULL,
+            updated_at = now()
+        WHERE id = ${userId}
+      `,
+      'logout:clear-refresh-token-hash',
+    );
 
     return {
       message: 'Logged out successfully',
@@ -248,11 +292,14 @@ export class AuthService {
   }
 
   public async getUserContact(userId: string): Promise<GetUserContactResponse> {
-    const [user] = await this.db.client<User[]>`
-      SELECT *
-      FROM users
-      WHERE id = ${userId}
-    `;
+    const [user] = await this.withTimeout(
+      this.db.client<User[]>`
+        SELECT *
+        FROM users
+        WHERE id = ${userId}
+      `,
+      'grpc:get-user-contact',
+    );
 
     if (!user) {
       return {
@@ -267,5 +314,28 @@ export class AuthService {
       email: user.email ?? '',
       phone: user.phone ?? '',
     };
+  }
+
+  private async withTimeout<T>(
+    operation: Promise<T>,
+    step: string,
+  ): Promise<T> {
+    try {
+      return await Promise.race([
+        operation,
+        new Promise<T>((_, reject) => {
+          setTimeout(
+            () => reject(new Error(`${step} timed out`)),
+            AuthService.OPERATION_TIMEOUT_MS,
+          );
+        }),
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      this.logger.error(`Auth operation failed at ${step}: ${message}`);
+
+      throw new ServiceUnavailableException(`Auth operation failed at ${step}`);
+    }
   }
 }

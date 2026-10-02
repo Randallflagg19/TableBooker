@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { DbService } from '../../../infrastructure/db/db.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
@@ -18,6 +19,8 @@ import { AuthClientService } from '../../../infrastructure/auth-client/auth-clie
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     private readonly db: DbService,
     private readonly rabbitMqService: RabbitMqService,
@@ -134,26 +137,33 @@ export class BookingsService {
       RETURNING *
     `;
 
-    const userContact = await this.authClientService.getUserContact(
-      updatedBooking.user_id,
-    );
+    try {
+      const userContact = await this.authClientService.getUserContact(
+        updatedBooking.user_id,
+      );
 
-    const payload: BookingEventPayload = {
-      bookingId: updatedBooking.id,
-      userId: updatedBooking.user_id,
-      tableId: updatedBooking.table_id,
-      status: 'CANCELLED',
-      startAt: updatedBooking.start_at,
-      endAt: updatedBooking.end_at,
-      email: userContact.found ? userContact.email || null : null,
-      phone: userContact.found ? userContact.phone || null : null,
-    };
+      const payload: BookingEventPayload = {
+        bookingId: updatedBooking.id,
+        userId: updatedBooking.user_id,
+        tableId: updatedBooking.table_id,
+        status: 'CANCELLED',
+        startAt: updatedBooking.start_at,
+        endAt: updatedBooking.end_at,
+        email: userContact.found ? userContact.email || null : null,
+        phone: userContact.found ? userContact.phone || null : null,
+      };
 
-    await this.rabbitMqService.publish(
-      BOOKING_EVENTS_EXCHANGE,
-      BOOKING_CANCELLED_EVENT,
-      payload,
-    );
+      await this.rabbitMqService.publish(
+        BOOKING_EVENTS_EXCHANGE,
+        BOOKING_CANCELLED_EVENT,
+        payload,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Booking ${updatedBooking.id} was cancelled, but notification dispatch failed`,
+      );
+      this.logger.warn(error instanceof Error ? error.message : String(error));
+    }
 
     return updatedBooking;
   }
@@ -189,26 +199,33 @@ export class BookingsService {
       RETURNING *
     `;
 
-    const userContact = await this.authClientService.getUserContact(
-      updatedBooking.user_id,
-    );
+    try {
+      const userContact = await this.authClientService.getUserContact(
+        updatedBooking.user_id,
+      );
 
-    const payload: BookingEventPayload = {
-      bookingId: updatedBooking.id,
-      userId: updatedBooking.user_id,
-      tableId: updatedBooking.table_id,
-      status: 'CONFIRMED',
-      startAt: updatedBooking.start_at,
-      endAt: updatedBooking.end_at,
-      email: userContact.found ? userContact.email || null : null,
-      phone: userContact.found ? userContact.phone || null : null,
-    };
+      const payload: BookingEventPayload = {
+        bookingId: updatedBooking.id,
+        userId: updatedBooking.user_id,
+        tableId: updatedBooking.table_id,
+        status: 'CONFIRMED',
+        startAt: updatedBooking.start_at,
+        endAt: updatedBooking.end_at,
+        email: userContact.found ? userContact.email || null : null,
+        phone: userContact.found ? userContact.phone || null : null,
+      };
 
-    await this.rabbitMqService.publish(
-      BOOKING_EVENTS_EXCHANGE,
-      BOOKING_CONFIRMED_EVENT,
-      payload,
-    );
+      await this.rabbitMqService.publish(
+        BOOKING_EVENTS_EXCHANGE,
+        BOOKING_CONFIRMED_EVENT,
+        payload,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Booking ${updatedBooking.id} was confirmed, but notification dispatch failed`,
+      );
+      this.logger.warn(error instanceof Error ? error.message : String(error));
+    }
 
     return updatedBooking;
   }
