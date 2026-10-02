@@ -35,11 +35,13 @@ export class AuthRateLimitService {
     key: string,
     action: AuthAction,
   ): Promise<number> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
     try {
       return await Promise.race([
         this.redis.increment(key, AuthRateLimitService.WINDOW_SECONDS),
         new Promise<number>((resolve) => {
-          setTimeout(() => {
+          timeout = setTimeout(() => {
             this.logger.warn(
               `Rate limit check timed out for ${action}, allowing request`,
             );
@@ -58,6 +60,10 @@ export class AuthRateLimitService {
       );
 
       return 1;
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     }
   }
 }
