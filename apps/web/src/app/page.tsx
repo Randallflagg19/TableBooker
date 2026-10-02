@@ -1,6 +1,9 @@
 'use client';
 import { useLocale } from '@/shared/i18n/locale-provider';
 
+// Full-page navigation avoids stalled RSC transitions seen on the production domain.
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 export default function Home() {
   const { t } = useLocale();
   return (

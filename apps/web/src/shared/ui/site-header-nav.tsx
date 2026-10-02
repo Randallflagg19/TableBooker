@@ -2,6 +2,9 @@
 
 import { useLocale } from '@/shared/i18n/locale-provider';
 
+// Full-page navigation avoids stalled RSC transitions seen on the production domain.
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 export default function SiteHeaderNav() {
   const { locale, setAppLocale, t } = useLocale();
 

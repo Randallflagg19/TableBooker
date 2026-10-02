@@ -8,6 +8,9 @@ import AuthSessionBootstrap from '@/features/auth/ui/auth-session-bootstrap';
 import SiteHeaderNav from '@/shared/ui/site-header-nav';
 import type { Locale } from '@/shared/i18n/messages';
 
+// Full-page navigation avoids stalled RSC transitions seen on the production domain.
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 export const metadata: Metadata = {
   title: 'TableBooker',
   description: 'Frontend for the TableBooker booking platform',
